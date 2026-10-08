@@ -383,21 +383,33 @@
       </article>`;
     }).join('');
     return `<div class="blind-select">
-      <h2 class="screen-title">Ante ${S.ante}${S.endless ? ', Endlosmodus' : ''}</h2>
+      <h2 class="sr-only">Ante ${S.ante}${S.endless ? ', Endlosmodus' : ''}: Wähle eine Blinde</h2>
       <div class="tickets">${cards}</div>
     </div>`;
   }
 
+  // Beleuchtet/geschwächt für Karten auf dem Tisch und in der Hand
+  const handCardOpts = (info) => (c) => {
+    const deb = L.isDebuffed(S, c);
+    return { lit: !deb && L.isLit(S, c, info), debuff: deb };
+  };
+
   function roundHTML() {
     const r = S.round;
-    const info = L.lightInfo(S);
-    const cardOpts = (c) => {
-      const deb = L.isDebuffed(S, c);
-      return { lit: !deb && L.isLit(S, c, info), debuff: deb };
-    };
+    const cardOpts = handCardOpts(L.lightInfo(S));
     // Gespielte Karten landen leicht schief, aber für jede Karte immer gleich
     const tiltOf = (u) => ((L.hashSeed(u) % 9) - 4) * 1.2;
     const play = playView ? playView.uids.filter((u) => S.cards[u]).map((u) => cardHTML(S.cards[u], Object.assign(cardOpts(S.cards[u]), { cls: playView.scoring.has(u) ? 'scoring' : 'nonscoring', style: `--tilt:${tiltOf(u)}deg` }))).join('') : '';
+    const remaining = Math.max(0, r.target - r.score);
+    return `<div class="play-zone">
+        <div class="play-area" id="play-area">${play || (busy ? '' : `<p class="play-hint">Noch ${fmt(remaining)} Punkte bis zum Ziel. Wähle bis zu 5 Karten.</p>`)}</div>
+      </div>`;
+  }
+
+  // Die Kartenbank aus Holz unter dem Spielfeld: Hand, Bedienleiste, Nachziehstapel
+  function rackHTML() {
+    const r = S.round;
+    const cardOpts = handCardOpts(L.lightInfo(S));
     const n = r.hand.length;
     const ov = n <= 6 ? 0.08 : n <= 8 ? -0.04 : n <= 10 ? -0.22 : -0.38;
     // Die Hand ist aufgefächert wie echte Karten
@@ -409,12 +421,8 @@
     }).join('');
     const canPlay = !busy && r.selected.length > 0 && r.handsLeft > 0;
     const canDisc = !busy && r.selected.length > 0 && r.discardsLeft > 0;
-    const remaining = Math.max(0, r.target - r.score);
-    return `<div class="play-zone">
-        <div class="play-area" id="play-area">${play || (busy ? '' : `<p class="play-hint">Noch ${fmt(remaining)} Punkte bis zum Ziel. Wähle bis zu 5 Karten.</p>`)}</div>
-      </div>
-      <div class="hand-zone">
-        <div class="hand" id="hand" role="group" aria-label="Deine Hand" tabindex="-1" style="--ov:${ov}">${hand}</div>
+    return `<div class="hand-zone">
+        <div class="rack"><div class="hand" id="hand" role="group" aria-label="Deine Hand" tabindex="-1" style="--ov:${ov}">${hand}</div><div class="rack-lip" aria-hidden="true"></div></div>
         <div class="controls">
           <button type="button" class="btn btn-primary btn-play" data-act="play" ${canPlay ? '' : 'disabled'}>Hand spielen</button>
           <div class="sort-box" role="group" aria-label="Hand sortieren">
@@ -608,7 +616,8 @@
       lastJokers = lastCons = lastPhase = null;
     } else {
       const skip = S.phase === 'round' ? '<a class="skip-link" href="#hand" data-act="skip-hand">Zu deinen Karten springen</a>' : '';
-      setHTML($('#app'), `${skip}<div class="run phase-${S.phase} ${busy ? 'busy' : ''}">${sideHTML()}<div class="board">${topHTML()}${moonTrackHTML()}<div class="center">${centerHTML()}</div></div></div>${endOverlayHTML()}`);
+      const rack = S.round && (S.phase === 'round' || S.phase === 'gameover') ? rackHTML() : '';
+      setHTML($('#app'), `${skip}<div class="run phase-${S.phase} ${busy ? 'busy' : ''}">${sideHTML()}<div class="board">${topHTML()}<section class="field" aria-label="Spielfeld"><div class="field-bg" aria-hidden="true"></div>${moonTrackHTML()}<div class="center">${centerHTML()}</div></section>${rack}</div></div>${endOverlayHTML()}`);
       animateMoon();
       entrances();
     }
