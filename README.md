@@ -44,6 +44,8 @@ Rund um den Zyklus gibt es:
 
 Lunaris sieht aus, als wäre es **1976** erschienen: Der Titel ist ein Schachteldeckel mit Regenbogenstreifen und Plaketten („1 Spieler“, „ab 10 Jahren“), die Seitenleiste ist Holzfurnier wie an einer Spielkonsole, Joker und Vorrat liegen in schwarzem Rippenplastik, gespielt wird auf braunem Cord. Senfgelb, Orange, Petrol und Avocado, gestaffelte Streifenschatten hinter der Schrift, Pillen-Buttons, Op-Art-Kartenrücken, Preise als Sternplaketten und Zeitgeist-Stempel wie „Dufte!“ nach starken Händen. Spielkarten zeigen klassische Kartenbilder, Joker sind Linienzeichnungen (SVG, kein Emoji). Blickfang ist die Mond-Umlaufbahn vor einem Strahlenkranz, der bei Vollmond zum Regenbogen wird. Schriften: *Shrikhand*, *Righteous* und *Alegreya Sans*. Hersteller und Ausgabe sind erfunden.
 
+Dazu kommen **übertriebene Animationen**: Karten wirbeln beim Austeilen herein und knallen beim Spielen auf den Tisch, Konfetti, Sterne und Münzen fliegen, der Bildschirm wackelt bei großen Treffern, die Gesamtpunktzahl erscheint riesig in der Bildmitte, Bildschirmwechsel laufen über eine Regenbogen-Wischblende, beim Rundensieg senkt sich eine Disco-Kugel, und bei Game Over fällt alles vom Tisch. In den Optionen lässt sich „Effekte: ruhig“ wählen; bei der Systemeinstellung „Bewegung reduzieren“ ist das automatisch aktiv.
+
 Tokens (Farben, klassische Schriftgrößenskala, Abstände, Ecken, Schatten, Bewegung) und Komponenten sind in [`docs/DESIGN.md`](docs/DESIGN.md) beschrieben.
 
 Barrierefreiheit: alle Bedienelemente sind echte Buttons mit sichtbarem Tastaturfokus, Farbkontraste erfüllen WCAG AA, Dialoge halten den Fokus, Wertungen werden für Screenreader angesagt und `prefers-reduced-motion` wird respektiert.
@@ -63,6 +65,7 @@ js/consumables.js   Arkana, Sternbilder, Mondsteine, Packs
 js/art.js           Linienzeichnungen (SVG) für Joker, Bosse und Verbrauchskarten
 js/game.js          Spielablauf (Runden, Shop, Packs)
 js/audio.js         Synthetische Soundeffekte (WebAudio)
+js/fx.js            Übertriebene Effekte: Partikel, Wackeln, Wischblende, Disco-Kugel
 js/ui.js            Darstellung, Animationen, Eingaben, Speichern
 tests/logic.test.js Logiktests + Bot-Simulation (node tests/logic.test.js)
 docs/DESIGN.md      Designsystem: Tokens, Komponenten, Regeln

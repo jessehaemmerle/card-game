@@ -82,6 +82,26 @@ Tooltip, Hinweis (Pille), Kassenzettel und Tickets aus Karton mit Streifenkante 
 
 Fünf Phasen auf einer Ellipse, die aktuelle steht vorn im gepunkteten Ring vor einem Strahlenkranz aus Senf und Orange. Dunkle Mondseiten sind mit orangen Punkten gerastert (`#raster`). Bei Vollmond wird der Strahlenkranz zum Regenbogen und dreht sich langsam.
 
+## Übertriebene Animationen (`js/fx.js`)
+
+Standardmäßig ist „Effekte: übertrieben“ aktiv. Das Effekt-Modul zeichnet Partikel auf einem eigenen Canvas (Konfetti, Sterne, Monde, Münzen) und steuert Bildschirmwackeln, Farbblitze, Riesentext, die Regenbogen-Wischblende, die Disco-Kugel, Feuerwerk und die Lavalampe im Hintergrund.
+
+| Moment | Effekt |
+|---|---|
+| Titel | Buchstaben fallen herein und tanzen, Streifen zeichnen sich, Monde rollen herein, Plaketten springen auf |
+| Bildschirmwechsel | Regenbogen-Wischblende aus fünf Streifen |
+| Austeilen | Karten wirbeln vom Nachziehstapel in den Fächer |
+| Spielen | Karten knallen auf den Tisch, Staubwolken, Wackeln |
+| Wertung | Karten hüpfen und drehen sich, Joker wirbeln, Partikel in der Farbe der Wertung, ×Mult mit Blitz und starkem Wackeln, Geld als fliegende Münzen |
+| Gesamtpunkte | riesige Zahl in der Bildmitte, die ins Anzeigefenster fliegt; Zeitgeist-Stempel; bei „Irre!“ Feuerwerk |
+| Rundensieg | Disco-Kugel, Konfettiregen, Feuerwerk, „Blinde besiegt!“ |
+| Neue Mondphase | Ring, Sternenregen, das Sonnenrad pulsiert; Vollmond mit Blitz, Heulen und Riesentext |
+| Shop | Waren schwingen herein, Neu würfeln wirbelt sie, gekaufte Joker fliegen mit Drehung in die Ablage, Packs platzen |
+| Game Over | alles fällt vom Tisch, der Bildschirm wird grau, das Fenster knallt herein |
+| Dauerbewegung | Joker wippen, die Hand wogt, Monde schweben, Preis-Sterne schaukeln, das Sonnenrad dreht sich, Lavalampen-Blasen ziehen |
+
+Mit „Effekte: ruhig“ in den Optionen oder der Systemeinstellung „Bewegung reduzieren“ setzt das Spiel `html.fx-calm`: keine Partikel, kein Wackeln, keine Dauerbewegung.
+
 ## Regeln
 
 - Senfgelb bedeutet immer „beleuchtet“ oder „jetzt dran“.
@@ -89,4 +109,4 @@ Fünf Phasen auf einer Ellipse, die aktuelle steht vorn im gepunkteten Ring vor 
 - Versalien und Sperrsatz für Beschriftungen vermeiden; Labels in normaler Schreibweise.
 - Begriffe einheitlich: „beleuchtet“, „Blinde“, „Vorrat“.
 - Kontraste mindestens WCAG AA (geprüft u. a.: Chamois/Tisch 13,5:1, Tinte/Karton 12:1, Tinte/Orange 5,2:1, Chamois/Petrol 4,7:1, Geld/Holz 6:1, Herz/Karton 5,3:1).
-- Bewegung antwortet auf Aktionen; einzige Daueranimation ist der Strahlenkranz bei Vollmond. `prefers-reduced-motion` schaltet Umlaufbahn, Federn, Kippen und Strahlenkranz ab.
+- Bewegung ist bewusst übertrieben, lässt sich aber jederzeit abschalten (`html.fx-calm`, siehe oben). Klickziele bewegen sich höchstens wenige Pixel.

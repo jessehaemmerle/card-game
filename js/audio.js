@@ -53,6 +53,14 @@
         case 'buy': tone(880, 0.06, 'square', 0.05); tone(1320, 0.12, 'square', 0.05, 0.05); break;
         case 'error': tone(150, 0.15, 'square', 0.05); break;
         case 'use': tone(600, 0.2, 'sine', 0.08, 0, 1200); break;
+        case 'whoosh': tone(900, 0.18, 'sawtooth', 0.03, 0, 200); break;
+        case 'deal': tone(1400 * p, 0.04, 'triangle', 0.04); break;
+        case 'slam': tone(120, 0.25, 'square', 0.1, 0, 50); tone(70, 0.3, 'sine', 0.14); break;
+        case 'boing': tone(180, 0.3, 'sine', 0.1, 0, 620); tone(620, 0.25, 'sine', 0.06, 0.12, 300); break;
+        case 'fanfare': [392, 523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, 0.22, 'square', 0.05, i * 0.09)); break;
+        case 'howl': tone(300, 0.5, 'sine', 0.09, 0, 700); tone(700, 0.7, 'sine', 0.08, 0.45, 420); break;
+        case 'kaching': tone(1568, 0.08, 'square', 0.05); tone(2093, 0.25, 'triangle', 0.06, 0.07); break;
+        case 'pop': tone(500 * p, 0.06, 'square', 0.05, 0, 900 * p); break;
         default: break;
       }
     } catch (e) { /* Audio ist optional */ }

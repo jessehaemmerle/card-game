@@ -7,6 +7,7 @@
   const C = L.cons;
   const G = L.game;
   const A = L.art;
+  const FX = L.fx;
   const UI = (L.ui = {});
 
   const SAVE_KEY = 'lunaris_save_v1';
@@ -23,7 +24,12 @@
   let playView = null; // Karten auf dem Tisch während der Wertung
   let lastMoon = null; // für die Animation der Mondbahn
   let titleDeck = 'nacht';
-  let settings = { speed: 1, sound: true };
+  let settings = { speed: 1, sound: true, fx: 'wild' };
+  // Für die Auftritts-Animationen: was war beim letzten Rendern schon da?
+  let lastHand = new Set();
+  let lastJokers = null;
+  let lastCons = null;
+  let lastPhase = null;
   const tips = new Map();
   let tipSeq = 0;
 
@@ -240,7 +246,7 @@
       <div class="title-phases" aria-hidden="true">${phases}</div>
       <div class="title-grid">
         <div class="title-main">
-          <h1 class="logo" aria-label="Lunaris">${'Lunaris'.split('').map((ch, i) => `<span aria-hidden="true" style="--wy:${(Math.sin(i * 1.1) * 0.07).toFixed(3)}em;--wr:${(Math.cos(i * 1.3) * 5).toFixed(1)}deg">${ch}</span>`).join('')}</h1>
+          <h1 class="logo" aria-label="Lunaris">${'Lunaris'.split('').map((ch, i) => `<span aria-hidden="true" style="--i:${i};--wy:${(Math.sin(i * 1.1) * 0.07).toFixed(3)}em;--wr:${(Math.cos(i * 1.3) * 5).toFixed(1)}deg">${ch}</span>`).join('')}</h1>
           <p class="tagline">Das Kartenspiel unterm Mond</p>
           <ul class="badges" aria-label="Spielangaben"><li><b>1</b> Spieler</li><li>ab <b>10</b> Jahren</li><li>ca. <b>30</b> Min.</li></ul>
           <p class="lede">Spiele Pokerhände gegen steigende Punktziele. Mit jeder Hand wandert der Mond eine Phase weiter und beleuchtet eine andere Farbe.</p>
@@ -309,7 +315,7 @@
       <dl class="ledger">
         <div><dt>Hände</dt><dd>${r ? r.handsLeft : '–'}</dd></div>
         <div><dt>Abwürfe</dt><dd>${r ? r.discardsLeft : '–'}</dd></div>
-        <div><dt>Geld</dt><dd class="v-money">$${S.money}</dd></div>
+        <div><dt>Geld</dt><dd class="v-money" id="money-value">$${S.money}</dd></div>
         <div><dt>Mondkraft</dt><dd class="v-moon">+${S.mondkraft}</dd></div>
         <div><dt>Ante</dt><dd>${S.ante} <small>von ${D.FINAL_ANTE}</small></dd></div>
         <div><dt>Runde</dt><dd>${roundNo}</dd></div>
@@ -562,6 +568,7 @@
     if (modal === 'settings') {
       title = 'Optionen';
       body = `<div class="opt-row"><span>Spieltempo</span><div role="group" aria-label="Spieltempo">${[1, 2, 3, 4].map((v) => `<button type="button" class="btn btn-quiet btn-tiny ${settings.speed === v ? 'on' : ''}" data-act="speed" data-v="${v}" aria-pressed="${settings.speed === v}">${v}×</button>`).join('')}</div></div>
+        <div class="opt-row"><span>Effekte</span><div role="group" aria-label="Effekte">${[['wild', 'Übertrieben'], ['calm', 'Ruhig']].map(([v, t]) => `<button type="button" class="btn btn-quiet btn-tiny ${settings.fx === v ? 'on' : ''}" data-act="fx" data-v="${v}" aria-pressed="${settings.fx === v}">${t}</button>`).join('')}</div></div>
         <div class="opt-row"><span>Sound</span><button type="button" class="btn btn-quiet btn-tiny ${settings.sound ? 'on' : ''}" data-act="toggle-sound" aria-pressed="${settings.sound}">${settings.sound ? 'An' : 'Aus'}</button></div>
         ${S ? `<div class="opt-row"><span>Seed dieses Laufs</span><code>${esc(S.seed)}</code></div>
         <div class="opt-row"><span>Tastatur</span><span class="keys">1 bis 9 wählt Karten, Enter spielt, D wirft ab, S sortiert um, Esc schließt.</span></div>
@@ -597,10 +604,13 @@
     const hadModal = !!$('#modal .modal-box');
     if (!S) {
       setHTML($('#app'), titleHTML());
+      lastHand = new Set();
+      lastJokers = lastCons = lastPhase = null;
     } else {
       const skip = S.phase === 'round' ? '<a class="skip-link" href="#hand" data-act="skip-hand">Zu deinen Karten springen</a>' : '';
       setHTML($('#app'), `${skip}<div class="run phase-${S.phase} ${busy ? 'busy' : ''}">${sideHTML()}<div class="board">${topHTML()}${moonTrackHTML()}<div class="center">${centerHTML()}</div></div></div>${endOverlayHTML()}`);
       animateMoon();
+      entrances();
     }
     setHTML($('#modal'), modalHTML());
     if (modal && !hadModal) { const b = $('#modal [data-act="close-modal"].btn'); if (b) b.focus(); }
@@ -609,7 +619,47 @@
     if (!busy) save();
   };
 
-  // Die Markierung gleitet von der alten zur neuen Mondphase.
+  // Neue Dinge auf dem Bildschirm treten übertrieben auf
+  function entrances() {
+    const r = S.round;
+    // Neue Handkarten fliegen vom Nachziehstapel herein
+    const pile = $('.deck-pile .card');
+    if (r && S.phase === 'round') {
+      const pc = pile && pile.getBoundingClientRect();
+      let k = 0;
+      r.hand.forEach((u) => {
+        if (lastHand.has(u)) return;
+        const el = $(`#hand .card[data-uid="${u}"]`);
+        if (!el || !pc || !FX.active()) return;
+        const cr = el.getBoundingClientRect();
+        el.style.setProperty('--fx', (pc.left - cr.left).toFixed(0) + 'px');
+        el.style.setProperty('--fy', (pc.top - cr.top).toFixed(0) + 'px');
+        el.style.setProperty('--dd', (k * 70) + 'ms');
+        el.classList.add('deal-in');
+        setTimeout(() => sfx('deal', k), k * 70);
+        k++;
+      });
+      lastHand = new Set(r.hand);
+    } else lastHand = new Set();
+    // Neue Joker und Verbrauchskarten landen mit Wirbel in der Ablage
+    const newcomers = (list, last, sel) => list.filter((x) => last && !last.includes(x.uid)).forEach((x) => {
+      const el = $(`${sel}[data-uid="${x.uid}"]`);
+      if (!el) return;
+      el.classList.add('arrive');
+      setTimeout(() => FX.burstAt(el, { n: 30, speed: 8 }), 350);
+    });
+    newcomers(S.jokers, lastJokers, '.jokers-tray .joker');
+    newcomers(S.consumables, lastCons, '.cons-tray .cons');
+    lastJokers = S.jokers.map((j) => j.uid);
+    lastCons = S.consumables.map((c) => c.uid);
+    // Bildschirmwechsel: Auftritt der Mitte
+    if (S.phase !== lastPhase) {
+      const c = $('.center');
+      if (c) c.classList.add('enter');
+      lastPhase = S.phase;
+    }
+  }
+
   // Die Umlaufbahn dreht sich von der alten zur neuen Phase.
   function animateMoon() {
     const moons = $$('.orbit .mt-moon');
@@ -624,6 +674,23 @@
         el.style.transition = '';
         el.style.cssText += ';' + orbitStyle(orbitPos(+el.dataset.i, S.moon));
       });
+      const moonNow = S.moon;
+      setTimeout(() => {
+        const front = $('.mt-moon.now');
+        const track = $('.moon-track');
+        if (!front || S.moon !== moonNow) return;
+        bump(front.querySelector('.moon'), 'boing');
+        if (track) bump(track, 'pulse');
+        FX.ring(front.querySelector('.moon'), '#f2b52b');
+        FX.burstAt(front.querySelector('.moon'), { n: 22, speed: 6, gravity: 0.08, shapes: ['star'], colors: ['#f2b52b', '#f08b1f', '#f4e6c8'] });
+        sfx('boing');
+        if (moonNow === D.FULL_MOON && !L.lightInfo(S).none) {
+          sfx('howl');
+          FX.flash('#f2b52b');
+          FX.bigText('Vollmond!', { cls: 'moonword', hold: 700 });
+          FX.burstAt(front, { n: 70, speed: 12, gravity: 0.1, shapes: ['star', 'text'], text: ['☾', '★'], size: 16, colors: ['#f2b52b', '#f4e6c8'] });
+        }
+      }, 650);
     }
     lastMoon = S.moon;
   }
@@ -664,7 +731,7 @@
     p.textContent = text;
     p.style.left = r.left + r.width / 2 + 'px';
     p.style.top = r.top + 'px';
-    const dur = (cls === 'slang' ? 1500 : 900) / settings.speed;
+    const dur = (cls === 'slang' ? 1600 : 1000) / settings.speed;
     p.style.animationDuration = dur + 'ms';
     p.style.setProperty('--rot', (Math.random() * 14 - 7).toFixed(1) + 'deg');
     document.body.appendChild(p);
@@ -706,6 +773,12 @@
   }
 
   // ---------- Spielzüge ----------
+  // Farben der Partikel je Wertungsart
+  const FX_COLORS = {
+    chips: ['#187172', '#4fb3b3', '#f4e6c8'], mult: ['#f0782a', '#e05a1a', '#f2b52b'], xmult: ['#f2b52b', '#f08b1f', '#e05a1a', '#a83a18'],
+    moon: ['#f2b52b', '#f4e6c8'], money: ['#f2b52b', '#a2b13a'], info: ['#f4e6c8', '#f2b52b'], debuff: ['#6b4a33', '#3a2215'],
+  };
+
   async function doPlay() {
     if (busy || !S || S.phase !== 'round') return;
     const err = G.playError(S);
@@ -715,51 +788,116 @@
     selJoker = selCons = null;
     playView = { uids: res.played.map((c) => c.uid), scoring: new Set(res.scoring.map((c) => c.uid)) };
     UI.render();
-    sfx('play');
+    // Die Karten knallen auf den Tisch
+    sfx('whoosh');
     setHTML($('#hp-name'), `${D.HANDS[res.type].name} <small>Level ${res.level}</small>`);
     $('#hand-panel').classList.remove('idle');
     $('#hp-chips').textContent = fmt(res.baseChips);
     $('#hp-mult').textContent = L.fmtNum(res.baseMult);
-    await sleep(450);
+    bump($('#hand-panel'), 'bump');
+    await sleep(300);
+    sfx('slam');
+    FX.shake(1);
+    $$('#play-area .card').forEach((el, i) => setTimeout(() => {
+      const r = el.getBoundingClientRect();
+      FX.burst(r.left + r.width / 2, r.bottom, { n: 12, speed: 4, spread: 1.4, up: 1, gravity: 0.2, shapes: ['circle'], size: 6, colors: ['#c4a77a', '#6b4a33', '#f4e6c8'] });
+    }, i * 50));
+    await sleep(300);
     $$('#play-area .card.scoring').forEach((el) => el.classList.add('up'));
     await sleep(250);
 
     let step = 0;
+    const money = () => $('#money-value');
     for (const e of res.events) {
       const el = eventEl(e);
-      if (el) { bump(el); popup(el, e.text, e.cls); }
-      if (e.jref) { const je = $(`.jokers-tray .joker[data-uid="${e.jref}"]`); if (je) bump(je); }
+      const colors = FX_COLORS[e.cls] || FX_COLORS.info;
+      if (el) {
+        bump(el, e.kind === 'joker' ? 'jspin' : 'hit');
+        popup(el, e.text, e.cls);
+        if (e.cls === 'xmult') {
+          FX.burstAt(el, { n: 60, speed: 13, shapes: ['star', 'rect'], colors, size: 13 });
+          FX.ring(el, '#f2b52b');
+          FX.shake(2);
+          FX.flash('#f0782a');
+        } else if (e.cls === 'moon') {
+          FX.burstAt(el, { n: 16, speed: 7, gravity: 0.12, shapes: ['star', 'text'], text: '☾', size: 14, colors });
+        } else if (e.cls === 'money') {
+          FX.coins(el, money(), 4);
+          setTimeout(() => sfx('kaching'), 400);
+        } else if (e.cls !== 'debuff') {
+          FX.burstAt(el, { n: e.cls === 'info' ? 10 : 16, speed: 7, colors });
+        }
+      }
+      if (e.jref) { const je = $(`.jokers-tray .joker[data-uid="${e.jref}"]`); if (je) { bump(je, 'jspin'); FX.burstAt(je, { n: 10, speed: 5, colors }); } }
       const ch = $('#hp-chips');
       const mu = $('#hp-mult');
-      if (ch.textContent !== fmt(e.chips)) { ch.textContent = fmt(e.chips); bump(ch); }
-      if (mu.textContent !== L.fmtNum(e.mult)) { mu.textContent = L.fmtNum(e.mult); bump(mu); }
+      if (ch.textContent !== fmt(e.chips)) { ch.textContent = fmt(e.chips); bump(ch, 'mega'); }
+      if (mu.textContent !== L.fmtNum(e.mult)) { mu.textContent = L.fmtNum(e.mult); bump(mu, e.cls === 'xmult' ? 'ultra' : 'mega'); }
       sfx(e.cls, step++);
-      await sleep(e.cls === 'xmult' ? 420 : e.cls === 'moon' ? 340 : 260);
+      await sleep(e.cls === 'xmult' ? 520 : e.cls === 'moon' ? 360 : 280);
     }
     await sleep(200);
 
+    // Die Gesamtpunktzahl wird riesig und fliegt ins Anzeigefenster
     const hp = $('#hand-panel');
     const before = S.round.score;
+    const ratio = res.total / S.round.target;
     setHTML($('#hp-name'), `<span class="total">${fmt(res.total)}</span> <small>Punkte</small>`);
     hp.classList.add('scored');
     if (before + res.total >= S.round.target) hp.classList.add('enough');
     announce(`${D.HANDS[res.type].name}: ${fmt(res.total)} Punkte`);
-    const ratio = res.total / S.round.target;
+    sfx('total');
+    FX.shake(ratio >= 1 ? 3 : ratio >= 0.4 ? 2 : 1);
+    FX.burst(window.innerWidth / 2, window.innerHeight * 0.45, { n: Math.min(120, 30 + Math.round(ratio * 60)), speed: 14, gravity: 0.2 });
+    await FX.bigText(fmt(res.total), { to: $('#round-score'), hold: 650 / settings.speed, cls: ratio >= 1 ? 'huge' : '' });
     const word = ratio >= 3 ? 'Irre!' : ratio >= 1 ? 'Dufte!' : ratio >= 0.6 ? 'Spitze!' : ratio >= 0.3 ? 'Klasse!' : null;
     const area = $('#play-area');
-    if (word && area) popup(area, word, 'slang');
-    sfx('total');
-    await countUp($('#round-score'), before, before + res.total, 600);
+    if (word && area) {
+      popup(area, word, 'slang');
+      sfx('boing');
+      FX.burstAt(area, { n: 50, speed: 11 });
+      if (word === 'Irre!') { FX.fireworks(5, 1000); FX.flash('#f2b52b'); }
+    }
+    const score = $('#round-score');
+    bump(score, 'flicker');
+    await countUp(score, before, before + res.total, 600);
     const bar = $('.led-bar > span');
     if (bar) bar.style.width = Math.min(100, ((before + res.total) / S.round.target) * 100) + '%';
     await sleep(450);
 
     const out = G.resolvePlay(S, res);
     playView = null;
-    busy = false;
-    if (out.won) sfx('win');
-    if (out.lost) { sfx('lose'); recordEnd(false); }
-    UI.render();
+    if (out.won) {
+      // Rundensieg: Disco!
+      sfx('fanfare');
+      FX.disco(2600 / Math.min(2, settings.speed));
+      FX.rain(180);
+      FX.fireworks(4, 1200);
+      await FX.bigText('Blinde besiegt!', { cls: 'win', hold: 1100 / settings.speed });
+      busy = false;
+      await FX.wipe(() => UI.render());
+    } else if (out.lost) {
+      // Alles fällt vom Tisch
+      sfx('lose');
+      recordEnd(false);
+      if (FX.active()) {
+        const run = $('.run');
+        if (run) run.classList.add('lost');
+        $$('#hand .card, #play-area .card, .jokers-tray .joker, .cons-tray .cons').forEach((el) => {
+          el.style.setProperty('--fr', (Math.random() * 120 - 60).toFixed(0) + 'deg');
+          el.style.setProperty('--fx2', (Math.random() * 200 - 100).toFixed(0) + 'px');
+          el.style.animationDelay = (Math.random() * 0.3).toFixed(2) + 's';
+          el.classList.add('fall');
+        });
+        await sleep(1000);
+        FX.shake(3);
+      }
+      busy = false;
+      UI.render();
+    } else {
+      busy = false;
+      UI.render();
+    }
     const focusEl = $('[data-act="cashout"]') || $('.end-box .btn') || $('#hand .card');
     if (focusEl && document.activeElement === document.body) focusEl.focus({ preventScroll: true });
   }
@@ -770,15 +908,31 @@
     if (!r.selected.length) return;
     if (r.discardsLeft <= 0) { toast('Keine Abwürfe mehr in dieser Runde.', 'bad'); sfx('error'); return; }
     busy = true;
-    r.selected.forEach((u) => { const el = $(`#hand .card[data-uid="${u}"]`); if (el) el.classList.add('discarding'); });
-    sfx('discard');
-    await sleep(240);
+    r.selected.forEach((u, i) => {
+      const el = $(`#hand .card[data-uid="${u}"]`);
+      if (!el) return;
+      el.style.setProperty('--dr', (360 + Math.random() * 540).toFixed(0) + 'deg');
+      el.style.transitionDelay = (i * 40) + 'ms';
+      el.classList.add('discarding');
+      FX.burstAt(el, { n: 8, speed: 5, colors: FX_COLORS.mult });
+    });
+    sfx('whoosh');
+    await sleep(420);
     busy = false;
     const n = r.selected.length;
     const err = G.discard(S);
     if (err) toast(err, 'bad');
     else announce(`${n} ${n === 1 ? 'Karte' : 'Karten'} abgeworfen`);
     UI.render();
+  }
+
+  // Bildschirmwechsel mit Regenbogen-Wischblende
+  async function transition(fn) {
+    if (busy) return;
+    busy = true;
+    sfx('whoosh');
+    await FX.wipe(() => { busy = false; fn(); UI.render(); });
+    busy = false;
   }
 
   // Eigener Bestätigungsdialog (window.confirm ist in eingebetteten Seiten oft gesperrt)
@@ -789,13 +943,14 @@
   }
 
   function newRun(deckId, seed) {
-    S = G.newRun(deckId, seed);
-    lastMoon = null;
-    const p = profile();
-    p.runs++;
-    store.set(PROFILE_KEY, p);
     modal = null;
-    UI.render();
+    transition(() => {
+      S = G.newRun(deckId, seed);
+      lastMoon = null;
+      const p = profile();
+      p.runs++;
+      store.set(PROFILE_KEY, p);
+    });
   }
 
   // ---------- Aktionen ----------
@@ -842,8 +997,18 @@
       const first = $('#hand .card');
       if (first) first.focus();
     },
-    'select-blind'() { G.selectBlind(S); sfx('play'); UI.render(); },
-    'skip-blind'() { G.skipBlind(S); sfx('buy'); UI.render(); },
+    'select-blind'() { transition(() => G.selectBlind(S)); },
+    async 'skip-blind'(el) {
+      if (busy) return;
+      busy = true;
+      const t = el.closest('.ticket');
+      if (t) { t.classList.add('fly-away'); FX.burstAt(t, { n: 50, speed: 10 }); }
+      sfx('boing');
+      await sleep(FX.active() ? 450 : 0);
+      busy = false;
+      G.skipBlind(S);
+      UI.render();
+    },
     card(el) {
       if (busy) return;
       hideTip();
@@ -912,18 +1077,25 @@
     buy(el) {
       const err = G.buyItem(S, +el.dataset.idx);
       if (err) { toast(err, 'bad'); sfx('error'); return; }
-      sfx('buy');
+      sfx('kaching');
+      FX.coins(el, $('#money-value'), 4);
+      FX.burstAt(el, { n: 30, speed: 9 });
       UI.render();
     },
     'buy-pack'(el) {
+      const slot = el.closest('.shop-slot');
       const err = G.buyPack(S, +el.dataset.idx);
       if (err) { toast(err, 'bad'); sfx('error'); return; }
-      sfx('buy');
+      sfx('boing');
+      if (slot) FX.burstAt(slot, { n: 70, speed: 13, shapes: ['rect', 'star'] });
+      FX.shake(2);
       UI.render();
       const first = $('.pack-choice .btn');
       if (first) first.focus();
     },
     'pack-pick'(el) {
+      const ch = el.closest('.pack-choice');
+      if (ch) FX.burstAt(ch, { n: 40, speed: 10 });
       const r = G.pickFromPack(S, +el.dataset.idx);
       if (r.error) { toast(r.error, 'bad'); sfx('error'); return; }
       toast(r.msg);
@@ -934,15 +1106,28 @@
     reroll() {
       const err = G.reroll(S);
       if (err) { toast(err, 'bad'); sfx('error'); return; }
-      sfx('buy');
+      sfx('whoosh');
       UI.render();
+      const items = $('.shop-items');
+      if (items) items.classList.add('reroll');
     },
-    'leave-shop'() { G.leaveShop(S); selJoker = selCons = null; UI.render(); },
-    cashout() {
-      G.cashOut(S);
-      sfx('money');
-      if (S.phase === 'victory') { recordEnd(true); sfx('win'); }
-      UI.render();
+    'leave-shop'() { selJoker = selCons = null; transition(() => G.leaveShop(S)); },
+    async cashout(el) {
+      if (busy) return;
+      busy = true;
+      sfx('kaching');
+      FX.coins($('.receipt-total') || el, $('#money-value'), 12);
+      FX.burstAt(el, { n: 40, speed: 10, colors: FX_COLORS.money });
+      await sleep(FX.active() ? 650 : 0);
+      busy = false;
+      await transition(() => G.cashOut(S));
+      if (S && S.phase === 'victory') {
+        recordEnd(true);
+        sfx('fanfare');
+        FX.disco(4000);
+        FX.fireworks(10, 3000);
+        FX.rain(220);
+      }
     },
     endless() { G.continueEndless(S); UI.render(); },
     menu() { if (S && S.phase !== 'gameover') save(); S = null; modal = null; UI.render(); },
@@ -959,6 +1144,7 @@
     'show-settings'() { modalReturn = '[data-act="show-settings"]'; modal = 'settings'; UI.render(); },
     'close-modal'() { modal = null; pendingConfirm = null; UI.render(); },
     speed(el) { settings.speed = +el.dataset.v; store.set(SETTINGS_KEY, settings); UI.render(); },
+    fx(el) { settings.fx = el.dataset.v; store.set(SETTINGS_KEY, settings); applyFx(); UI.render(); },
     'toggle-sound'() { settings.sound = !settings.sound; L.audio.enabled = settings.sound; store.set(SETTINGS_KEY, settings); UI.render(); },
   };
 
@@ -972,6 +1158,7 @@
     const act = el.dataset.act;
     if (act === 'noop') return; // Klick ins Modal-Innere schließt es nicht
     if (act === 'use-cons' && el.dataset.block) { toast(el.dataset.block, 'bad'); sfx('error'); return; }
+    if (el.classList.contains('btn-primary') && !busy) FX.burst(ev.clientX || 0, ev.clientY || 0, { n: 18, speed: 7 });
     const fn = actions[act];
     if (fn) fn(el, ev);
   }
@@ -1052,8 +1239,16 @@
   }
   const onFocus = (ev) => showTipFor(ev.target.closest && ev.target.closest('[data-tip]'));
 
+  // Effekte: übertrieben oder ruhig (ruhig auch, wenn das System weniger Bewegung wünscht)
+  function applyFx() {
+    FX.calm = settings.fx === 'calm' || reducedMotion();
+    document.documentElement.classList.toggle('fx-calm', FX.calm);
+  }
+
   UI.init = function (data) {
     settings = Object.assign(settings, store.get(SETTINGS_KEY) || {});
+    applyFx();
+    FX.lava();
     if (data && data.state && data.state.version === 1) S = data.state;
     L.audio.enabled = settings.sound;
     document.addEventListener('click', onClick);
