@@ -6,8 +6,13 @@ Spiele Pokerhände gegen steigende Punktziele, sammle Joker, verbessere dein Dec
 
 ## Spielen
 
-Kein Build-Schritt, keine Abhängigkeiten: einfach `index.html` im Browser öffnen.
-Alternativ über einen beliebigen statischen Webserver (z. B. GitHub Pages) ausliefern.
+Online: **https://jessehaemmerle.github.io/card-game/**
+
+Lokal: kein Build-Schritt, keine Abhängigkeiten, einfach `index.html` im Browser öffnen.
+
+### Veröffentlichung
+
+Jeder Push auf `main` startet den Workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml): Er lässt die Logiktests laufen und veröffentlicht danach `index.html`, `css/` und `js/` auf GitHub Pages. Einmalig muss dafür unter *Settings → Pages* als Quelle „GitHub Actions“ gewählt sein.
 
 Der Spielstand wird automatisch im Browser (`localStorage`) gespeichert.
 
@@ -90,6 +95,7 @@ js/fx.js            Übertriebene Effekte: Partikel, Wackeln, Wischblende, Disco
 js/ui.js            Darstellung, Animationen, Eingaben, Speichern
 tests/logic.test.js Logiktests + Bot-Simulation (node tests/logic.test.js)
 docs/DESIGN.md      Designsystem: Tokens, Komponenten, Regeln
+.github/workflows/pages.yml  Tests und Veröffentlichung auf GitHub Pages
 ```
 
 ## Tests
