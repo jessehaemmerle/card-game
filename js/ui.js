@@ -82,6 +82,22 @@
     return h;
   }
 
+  // Klassische Anordnung der Symbole auf den Zahlenkarten (x %, y %)
+  const PIPS = {
+    2: [[50, 24], [50, 76]],
+    3: [[50, 24], [50, 50], [50, 76]],
+    4: [[36, 24], [64, 24], [36, 76], [64, 76]],
+    5: [[36, 24], [64, 24], [50, 50], [36, 76], [64, 76]],
+    6: [[36, 24], [64, 24], [36, 50], [64, 50], [36, 76], [64, 76]],
+    7: [[36, 24], [64, 24], [50, 37], [36, 50], [64, 50], [36, 76], [64, 76]],
+    8: [[36, 24], [64, 24], [50, 37], [36, 50], [64, 50], [50, 63], [36, 76], [64, 76]],
+    9: [[36, 24], [64, 24], [36, 41.3], [64, 41.3], [50, 50], [36, 58.7], [64, 58.7], [36, 76], [64, 76]],
+    10: [[36, 24], [64, 24], [50, 32.7], [36, 41.3], [64, 41.3], [36, 58.7], [64, 58.7], [50, 67.3], [36, 76], [64, 76]],
+  };
+  function pipsHTML(rank, sy) {
+    return `<span class="pips">${PIPS[rank].map(([x, y]) => `<i style="left:${x}%;top:${y}%"${y > 50 ? ' class="down"' : ''}>${sy}</i>`).join('')}</span>`;
+  }
+
   // Spielkarte. Mit o.act wird sie ein Button (Handkarten), sonst ein reines Bild.
   function cardHTML(c, o) {
     o = o || {};
@@ -98,7 +114,8 @@
     let center;
     if (stone) center = '';
     else if (L.isFace(c)) center = `<span class="court">${rk}</span>`;
-    else center = `<span class="pip">${sy}</span>`;
+    else if (c.rank === 14 || (o.cls || '').includes('mini')) center = `<span class="pip ${c.rank === 14 ? 'ace' : ''}">${sy}</span>`;
+    else center = pipsHTML(c.rank, sy);
     const corners = stone ? '' : `<span class="corner tl">${rk}<i>${sy}</i></span><span class="corner br">${rk}<i>${sy}</i></span>`;
     const enh = c.enh && !stone ? `<span class="enh-tag">${D.ENH[c.enh].short}</span>` : '';
     const label = cardName(c) + (o.lit ? ', beleuchtet' : '') + (o.debuff ? ', geschwächt' : '');
@@ -157,6 +174,17 @@
   }
 
   // ---------- Mondbahn (das Herzstück) ----------
+  // Die fünf Phasen liegen auf einer elliptischen Umlaufbahn; die aktuelle steht vorn.
+  // Nach jeder Hand dreht sich die Bahn um eine Phase weiter.
+  function orbitPos(i, moon) {
+    let d = (((i - moon) % D.MOON.length) + D.MOON.length) % D.MOON.length;
+    if (d > 2) d -= D.MOON.length; // -2 … 2, die nächste Phase liegt rechts
+    const a = ((90 - d * 72) * Math.PI) / 180;
+    const depth = (Math.sin(a) + 1) / 2; // 1 = vorn, 0 = hinten
+    return { x: 50 + 44 * Math.cos(a), y: Math.sin(a), s: 0.46 + 0.54 * depth, o: 0.4 + 0.6 * depth, z: Math.round(depth * 10) };
+  }
+  const orbitStyle = (p) => `--x:${p.x.toFixed(2)}%;--y:${p.y.toFixed(3)};--s:${p.s.toFixed(3)};--o:${p.o.toFixed(3)};z-index:${p.z}`;
+
   function moonTrackHTML() {
     const info = L.lightInfo(S);
     const ph = D.MOON[S.moon];
@@ -164,23 +192,26 @@
     const moons = D.MOON.map((m, i) => {
       const now = i === S.moon;
       const suit = m.suit === '*' ? 'alle' : D.SUIT_SYM[m.suit];
-      return `<li class="mt-moon ${now ? 'now' : ''} ${info.none ? 'dark' : ''}" style="--i:${i}">
-        ${A.moon(m.frac, now ? 66 : 40)}
+      return `<li class="mt-moon ${now ? 'now' : ''} ${info.none ? 'dark' : ''}" data-i="${i}" style="${orbitStyle(orbitPos(i, S.moon))}">
+        ${A.moon(m.frac, 84)}
         <span class="mt-suit ${m.suit === '*' ? 'all' : 'ink-' + m.suit}">${suit}</span>
         <span class="sr-only">${m.name}${now ? ' (jetzt)' : ''}</span>
       </li>`;
     }).join('');
     let caption;
-    if (info.none) caption = `<b>${ph.name}</b>, aber kein Mondlicht in dieser Runde.`;
-    else if (info.all) caption = `<b>Vollmond.</b> Alle Farben leuchten: jede gezählte Karte gibt +${S.mondkraft} Mult.`;
+    if (info.none) caption = `<b>${ph.name}.</b> In dieser Runde scheint kein Mondlicht.`;
+    else if (info.all) caption = `<b>Vollmond.</b> Jede gezählte Karte gibt +${S.mondkraft} Mult.`;
     else {
-      const names = [...info.suits].map((s) => `${D.SUIT_NAME[s]} <span class="ink-${s}">${D.SUIT_SYM[s]}</span>`).join(' und ');
-      caption = `<b>${ph.name}.</b> ${names} leuchtet: jede gezählte Karte dieser Farbe gibt +${S.mondkraft} Mult.`;
+      const suits = [...info.suits];
+      const names = suits.length === 1
+        ? `${D.SUIT_NAME[suits[0]]}-Karten&nbsp;<span class="ink-${suits[0]}">${D.SUIT_SYM[suits[0]]}</span>`
+        : `${suits.map((x) => `${D.SUIT_NAME[x]}-`).join(' und ').replace(/-$/, '-Karten')}&nbsp;${suits.map((x) => `<span class="ink-${x}">${D.SUIT_SYM[x]}</span>`).join('&nbsp;')}`;
+      caption = `<b>${ph.name}.</b> Gezählte ${names} geben +${S.mondkraft} Mult.`;
     }
-    const nextTxt = next.suit === '*' ? 'Vollmond, alle Farben' : `${next.name}, ${D.SUIT_NAME[next.suit]}`;
+    const nextTxt = next.suit === '*' ? 'der Vollmond, dann sind alle Farben beleuchtet' : `der ${next.name}&nbsp;<span class="ink-${next.suit}">${D.SUIT_SYM[next.suit]}</span>`;
     return `<section class="moon-track" aria-label="Mondzyklus">
-      <ol class="mt-row" style="--now:${S.moon}">${moons}<li class="mt-marker" aria-hidden="true" style="--i:${S.moon}"></li></ol>
-      <p class="mt-caption">${caption} <span class="mt-next">Nach der nächsten Hand: ${nextTxt}.</span></p>
+      <ol class="orbit">${moons}</ol>
+      <p class="mt-caption">${caption} <span class="mt-next">Danach folgt ${nextTxt}.</span></p>
     </section>`;
   }
 
@@ -204,7 +235,7 @@
       <div class="title-grid">
         <div class="title-main">
           <h1 class="logo">Lunaris</h1>
-          <p class="lede">Spiele Pokerhände gegen steigende Punktziele. Mit jeder Hand wandert der Mond eine Phase weiter und lässt eine andere Farbe leuchten.</p>
+          <p class="lede">Spiele Pokerhände gegen steigende Punktziele. Mit jeder Hand wandert der Mond eine Phase weiter und beleuchtet eine andere Farbe.</p>
           <div class="title-btns">
             ${has ? '<button type="button" class="btn btn-primary big" data-act="continue">Lauf fortsetzen</button>' : ''}
             <button type="button" class="btn ${has ? 'btn-quiet' : 'btn-primary'} big" data-act="new-run">Neuer Lauf</button>
@@ -256,10 +287,10 @@
         <span class="led-big" id="round-score">${fmt(r.score)}</span>
         <span class="led-bar"><span style="width:${pct}%"></span></span>
       </div>
-      <div class="hand-panel" id="hand-panel" aria-live="polite">
-        <div class="hp-name" id="hp-name">${p ? `${D.HANDS[p.type].name} <small>Level ${p.level}</small>` : '<span class="hp-empty">Keine Karten gewählt</span>'}</div>
+      ${S.phase === 'round' ? `<div class="hand-panel ${p || busy ? '' : 'idle'}" id="hand-panel" aria-live="polite">
+        <div class="hp-name" id="hp-name">${p ? `${D.HANDS[p.type].name} <small>Level ${p.level}</small>` : busy ? '' : '<span class="hp-empty">Wähle bis zu 5 Karten</span>'}</div>
         <div class="hp-cm"><span class="hp-chips" id="hp-chips">${p ? fmt(p.chips) : 0}</span><span class="hp-x" aria-label="mal">×</span><span class="hp-mult" id="hp-mult">${p ? L.fmtNum(p.mult) : 0}</span></div>
-      </div>` : '';
+      </div>` : ''}` : '';
     return `<aside class="side" aria-label="Rundeninfo">
       <div class="side-logo">Lunaris</div>
       ${blind}
@@ -307,7 +338,7 @@
     for (let k = S.consumables.length; k < S.consSlots; k++) cs.push('<div class="slot"><div class="slot-empty"></div></div>');
     return `<div class="top-row">
       <section class="tray jokers-tray" aria-label="Joker"><h3 class="tray-label">Joker <span>${S.jokers.length} von ${S.jokerSlots}</span></h3><div class="tray-items">${jk.join('')}</div></section>
-      <section class="tray cons-tray" aria-label="Verbrauchskarten"><h3 class="tray-label">Vorrat <span>${S.consumables.length} von ${S.consSlots}</span></h3><div class="tray-items">${cs.join('')}</div></section>
+      <section class="tray cons-tray" aria-label="Vorrat"><h3 class="tray-label">Vorrat <span>${S.consumables.length} von ${S.consSlots}</span></h3><div class="tray-items">${cs.join('')}</div></section>
     </div>`;
   }
 
@@ -533,8 +564,8 @@
       <p>Wähle bis zu 5 Karten und spiele sie. Die Punkte sind Chips mal Mult. Die Pokerhand liefert die Grundwerte, jede gezählte Karte addiert ihre Chips (Ass 11, Bildkarten 10). Joker, Kartenverbesserungen und Mondlicht erhöhen die Werte. Pro Runde hast du nur wenige Hände und Abwürfe.</p>
       <h3>Der Mondzyklus</h3>
       <p>Der Mond durchläuft fünf Phasen: Neumond ♠, Sichelmond ♥, Halbmond ♣, Buckelmond ♦ und Vollmond. Nach jeder gespielten Hand rückt er eine Phase weiter, auch über Runden hinweg.</p>
-      <p>Die Farbe der aktuellen Phase leuchtet. Jede gezählte Karte dieser Farbe gibt zusätzlich so viel Mult, wie deine Mondkraft beträgt (zu Beginn +2). Bei Vollmond leuchten alle Farben. Leuchtende Handkarten haben einen hellgelben Rand.</p>
-      <p>Hebe deine stärkste Hand für den Vollmond auf. Mit Mondsteinen verschiebst du den Mond, Mondsilber-Karten leuchten immer, und Joker wie der Werwolf leben vom Zyklus. Manche Bosse löschen das Mondlicht oder verlangen es.</p>
+      <p>Die Farbe der aktuellen Phase ist beleuchtet. Jede gezählte Karte dieser Farbe gibt zusätzlich so viel Mult, wie deine Mondkraft beträgt (zu Beginn +2). Bei Vollmond sind alle Farben beleuchtet. Beleuchtete Handkarten haben einen hellgelben Rand.</p>
+      <p>Hebe deine stärkste Hand für den Vollmond auf. Mit Mondsteinen verschiebst du den Mond, Mondsilber-Karten sind immer beleuchtet, und Joker wie der Werwolf leben vom Zyklus. Manche Bosse löschen das Mondlicht oder verlangen es.</p>
       <h3>Shop</h3>
       <p>Nach jeder Blinde bekommst du Geld, dazu $1 Zinsen pro $5 Erspartem (höchstens $5). Im Shop gibt es Joker (höchstens 5, ihre Reihenfolge zählt), Arkana zum Verändern von Karten (erst Handkarten wählen, dann benutzen), Sternbilder zum Leveln von Pokerhänden und Mondsteine.</p>
       <h3>Überspringen</h3>
@@ -563,17 +594,20 @@
   };
 
   // Die Markierung gleitet von der alten zur neuen Mondphase.
+  // Die Umlaufbahn dreht sich von der alten zur neuen Phase.
   function animateMoon() {
-    const marker = $('.mt-marker');
-    if (!marker) return;
+    const moons = $$('.orbit .mt-moon');
+    if (!moons.length) return;
     if (lastMoon !== null && lastMoon !== S.moon && !reducedMotion()) {
-      marker.style.transition = 'none';
-      marker.style.setProperty('--i', lastMoon);
-      void marker.offsetWidth;
-      marker.style.transition = '';
-      marker.style.setProperty('--i', S.moon);
-      const now = $('.mt-moon.now');
-      if (now) bump(now, 'arrive');
+      moons.forEach((el) => {
+        el.style.transition = 'none';
+        el.style.cssText += ';' + orbitStyle(orbitPos(+el.dataset.i, lastMoon));
+      });
+      void moons[0].offsetWidth;
+      moons.forEach((el) => {
+        el.style.transition = '';
+        el.style.cssText += ';' + orbitStyle(orbitPos(+el.dataset.i, S.moon));
+      });
     }
     lastMoon = S.moon;
   }
@@ -585,7 +619,8 @@
 
   function updateHandUI() {
     const p = previewInfo();
-    setHTML($('#hp-name'), p ? `${D.HANDS[p.type].name} <small>Level ${p.level}</small>` : '<span class="hp-empty">Keine Karten gewählt</span>');
+    setHTML($('#hp-name'), p ? `${D.HANDS[p.type].name} <small>Level ${p.level}</small>` : '<span class="hp-empty">Wähle bis zu 5 Karten</span>');
+    $('#hand-panel').classList.toggle('idle', !p);
     $('#hp-chips').textContent = p ? fmt(p.chips) : 0;
     $('#hp-mult').textContent = p ? L.fmtNum(p.mult) : 0;
     const r = S.round;
@@ -664,6 +699,7 @@
     UI.render();
     sfx('play');
     setHTML($('#hp-name'), `${D.HANDS[res.type].name} <small>Level ${res.level}</small>`);
+    $('#hand-panel').classList.remove('idle');
     $('#hp-chips').textContent = fmt(res.baseChips);
     $('#hp-mult').textContent = L.fmtNum(res.baseMult);
     await sleep(450);

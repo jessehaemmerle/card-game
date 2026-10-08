@@ -164,7 +164,7 @@
       if (s.jokers.length < s.jokerSlots) {
         const j = G.addJoker(s, G.randomJokerId(s, L.rand(s) < 0.8 ? 1 : 2));
         G.notice(s, `${name}: ${L.jokers[j.id].name}`);
-      } else { s.money += 5; G.notice(s, `${name}: Kein Platz – +$5`); }
+      } else { s.money += 5; G.notice(s, `${name}: Kein Joker-Platz frei, dafür +$5`); }
     } else if (rid === 'sternregen') {
       const best = D.HAND_ORDER.slice().sort((a, b) => s.handLevels[b].played - s.handLevels[a].played || D.HAND_ORDER.indexOf(b) - D.HAND_ORDER.indexOf(a))[0];
       G.levelUp(s, best, 2);
@@ -174,7 +174,7 @@
         const id = G.randomConsId(s, 'arkana');
         G.addConsumable(s, 'arkana', id);
         G.notice(s, `${name}: ${C.arkana[id].name}`);
-      } else G.notice(s, `${name}: Kein Platz frei`);
+      } else G.notice(s, `${name}: Dein Vorrat ist voll, die Karte verfällt`);
     }
   };
 
@@ -532,10 +532,10 @@
     if (!item || item.sold || s.pack) return 'Gerade nicht möglich';
     if (s.money < item.price) return 'Nicht genug Geld';
     if (item.kind === 'joker') {
-      if (s.jokers.length >= s.jokerSlots) return 'Keine freien Joker-Plätze';
+      if (s.jokers.length >= s.jokerSlots) return 'Alle Joker-Plätze sind belegt. Verkaufe zuerst einen Joker.';
       G.addJoker(s, item.id, item.edition);
     } else {
-      if (s.consumables.length >= s.consSlots) return 'Keine freien Verbrauchsplätze';
+      if (s.consumables.length >= s.consSlots) return 'Dein Vorrat ist voll. Verkaufe oder benutze zuerst eine Karte.';
       G.addConsumable(s, item.kind, item.id);
     }
     s.money -= item.price;
@@ -582,13 +582,13 @@
       G.addCard(s, ch.card);
       msg = 'Karte zum Deck hinzugefügt';
     } else if (ch.kind === 'joker') {
-      if (s.jokers.length >= s.jokerSlots) return { error: 'Keine freien Joker-Plätze' };
+      if (s.jokers.length >= s.jokerSlots) return { error: 'Alle Joker-Plätze sind belegt. Verkaufe zuerst einen Joker.' };
       G.addJoker(s, ch.id, ch.edition);
       msg = `${L.jokers[ch.id].name} erhalten`;
     } else if (ch.kind === 'stern') {
       msg = C.stern[ch.id].use(s);
     } else {
-      if (s.consumables.length >= s.consSlots) return { error: 'Keine freien Verbrauchsplätze' };
+      if (s.consumables.length >= s.consSlots) return { error: 'Dein Vorrat ist voll. Verkaufe oder benutze zuerst eine Karte.' };
       G.addConsumable(s, ch.kind, ch.id);
       msg = `${C[ch.kind][ch.id].name} erhalten`;
     }

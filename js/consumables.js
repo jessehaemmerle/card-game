@@ -48,16 +48,16 @@
     desc: 'Verdoppelt dein Geld (max. +$20)',
     use: (s) => { const g = Math.max(0, Math.min(20, s.money)); s.money += g; return `+$${g}`; } });
   ark({ id: 'hohepriesterin', name: 'Die Hohepriesterin', 
-    desc: 'Erzeugt bis zu 2 zufällige Sternbild-Karten (Platz nötig)',
-    canUse: (s) => s.consumables.length < s.consSlots || 'Keine freien Verbrauchsplätze',
+    desc: 'Erzeugt bis zu 2 zufällige Sternbild-Karten (Platz im Vorrat nötig)',
+    canUse: (s) => s.consumables.length < s.consSlots || 'Dein Vorrat ist voll. Verkaufe oder benutze zuerst eine Karte.',
     use: (s) => {
       let n = 0;
       while (n < 2 && s.consumables.length < s.consSlots) { G().addConsumable(s, 'stern', G().randomConsId(s, 'stern')); n++; }
       return `${n} Sternbild${n === 1 ? '' : 'er'} erhalten`;
     } });
   ark({ id: 'gericht', name: 'Das Gericht', 
-    desc: 'Erzeugt einen zufälligen Joker (Platz nötig)',
-    canUse: (s) => s.jokers.length < s.jokerSlots || 'Keine freien Joker-Plätze',
+    desc: 'Erzeugt einen zufälligen Joker (freier Joker-Platz nötig)',
+    canUse: (s) => s.jokers.length < s.jokerSlots || 'Alle Joker-Plätze sind belegt. Verkaufe zuerst einen Joker.',
     use: (s) => { const j = G().addJoker(s, G().randomJokerId(s)); return `${L.jokers[j.id].name} erhalten`; } });
   ark({ id: 'rad', name: 'Rad des Schicksals', 
     desc: '1 zu 3 Chance: Ein zufälliger Joker ohne Edition erhält Folie, Holo oder Polychrom',
@@ -101,7 +101,7 @@
   // ---------- Booster-Packs ----------
   C.PACKS = {
     arkana: { name: 'Arkana-Pack', cost: 4, choices: 3, desc: 'Wähle 1 von 3 Arkana-Karten' },
-    stern:  { name: 'Sternen-Pack', cost: 4, choices: 3, desc: 'Wähle 1 von 3 Sternbildern – wird sofort angewendet' },
+    stern:  { name: 'Sternen-Pack', cost: 4, choices: 3, desc: 'Wähle 1 von 3 Sternbildern. Es wird sofort angewendet' },
     karten: { name: 'Karten-Pack', cost: 4, choices: 3, desc: 'Wähle 1 von 3 Spielkarten für dein Deck' },
     joker:  { name: 'Joker-Pack', cost: 6, choices: 2, desc: 'Wähle 1 von 2 Jokern' },
     mond:   { name: 'Mond-Pack', cost: 4, choices: 3, desc: 'Wähle 1 von 3 Mondsteinen' },

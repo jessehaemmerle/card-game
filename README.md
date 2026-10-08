@@ -42,7 +42,9 @@ Rund um den Zyklus gibt es:
 
 ## Gestaltung
 
-Die Optik orientiert sich an **Cyanotypien** – den preußischblauen Lichtdrucken, mit denen im 19. Jahrhundert auch der Mond fotografiert wurde: eine körnige blaue Druckplatte, Spielkarten und Belege aus Papier, Joker als Linienzeichnungen (SVG, kein Emoji), Sternbilder als echte Sternkarten und Arkana mit ihren Tarot-Nummern. Schriften: *IM Fell English* und *Alegreya Sans*.
+Die Optik orientiert sich an **Cyanotypien**, den preußischblauen Lichtdrucken, mit denen im 19. Jahrhundert auch der Mond fotografiert wurde: eine körnige blaue Druckplatte, Spielkarten mit klassischen Kartenbildern, Belege und Tickets aus Papier, Joker als Linienzeichnungen (SVG, kein Emoji), Sternbilder als echte Sternkarten und Arkana mit ihren Tarot-Nummern. Blickfang ist die Mond-Umlaufbahn über dem Tisch, die sich nach jeder Hand um eine Phase dreht. Schriften: *IM Fell English* und *Alegreya Sans*.
+
+Tokens (Farben, klassische Schriftgrößenskala, Abstände, Ecken, Schatten, Bewegung) und Komponenten sind in [`docs/DESIGN.md`](docs/DESIGN.md) beschrieben.
 
 Barrierefreiheit: alle Bedienelemente sind echte Buttons mit sichtbarem Tastaturfokus, Farbkontraste erfüllen WCAG AA, Dialoge halten den Fokus, Wertungen werden für Screenreader angesagt und `prefers-reduced-motion` wird respektiert.
 
@@ -63,6 +65,7 @@ js/game.js          Spielablauf (Runden, Shop, Packs)
 js/audio.js         Synthetische Soundeffekte (WebAudio)
 js/ui.js            Darstellung, Animationen, Eingaben, Speichern
 tests/logic.test.js Logiktests + Bot-Simulation (node tests/logic.test.js)
+docs/DESIGN.md      Designsystem: Tokens, Komponenten, Regeln
 ```
 
 ## Tests

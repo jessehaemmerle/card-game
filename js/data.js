@@ -45,7 +45,7 @@
   D.ENH = {
     bonus:  { name: 'Bonuskarte',  short: 'Bonus', desc: '+30 Chips' },
     mult:   { name: 'Multkarte',   short: 'Mult',  desc: '+4 Mult' },
-    wild:   { name: 'Wildkarte',   short: 'Wild',  desc: 'Zählt als jede Farbe – und ist damit immer beleuchtet, solange der Mond scheint' },
+    wild:   { name: 'Wildkarte',   short: 'Wild',  desc: 'Zählt als jede Farbe und ist deshalb immer beleuchtet, solange der Mond scheint' },
     glass:  { name: 'Glaskarte',   short: 'Glas',  desc: '×2 Mult, 1 zu 4 Chance zu zerbrechen' },
     steel:  { name: 'Stahlkarte',  short: 'Stahl', desc: '×1,5 Mult, solange sie in der Hand bleibt' },
     gold:   { name: 'Goldkarte',   short: 'Gold',  desc: '$3, wenn sie am Rundenende in der Hand ist' },
@@ -76,7 +76,7 @@
     eiche:    { name: 'Die Eiche',       desc: 'Alle ♣-Karten sind geschwächt', debuff: (c) => L.hasSuit(c, 'C') },
     kristall: { name: 'Der Kristall',    desc: 'Alle ♦-Karten sind geschwächt', debuff: (c) => L.hasSuit(c, 'D') },
     wand:     { name: 'Die Wand',        desc: 'Riesige Blinde (×4 statt ×2)', targetMult: 4 },
-    nadel:    { name: 'Die Nadel',       desc: 'Nur 1 Hand – aber kleineres Ziel', targetMult: 1, hands: 1, minAnte: 2 },
+    nadel:    { name: 'Die Nadel',       desc: 'Nur 1 Hand, dafür ein kleineres Ziel', targetMult: 1, hands: 1, minAnte: 2 },
     duerre:   { name: 'Die Dürre',       desc: 'Keine Abwürfe', discards: 0 },
     auge:     { name: 'Das Auge',        desc: 'Keine Pokerhand darf wiederholt werden', minAnte: 2 },
     mund:     { name: 'Der Mund',        desc: 'Nur eine Art Pokerhand ist erlaubt', minAnte: 2 },
@@ -92,7 +92,7 @@
     sturm:       { name: 'Der Gezeitensturm', desc: 'Der Mond springt 2 Phasen pro Hand', moonStep: 2 },
     starre:      { name: 'Die Starre',      desc: 'Der Mond wird zum Neumond und steht still', moonStep: 0, startMoon: 0 },
     // Finale Bosse (Ante 8, 16, ...)
-    blutmond:     { name: 'Der Blutmond',      desc: 'Nur beleuchtete Karten zählen – alle anderen sind geschwächt', debuff: (c, ctx) => !L.isLit(ctx.state, c, ctx.light), final: true },
+    blutmond:     { name: 'Der Blutmond',      desc: 'Nur beleuchtete Karten zählen, alle anderen sind geschwächt', debuff: (c, ctx) => !L.isLit(ctx.state, c, ctx.light), final: true },
     schwarzesonne:{ name: 'Die Schwarze Sonne', desc: 'Kein Mondlicht und Riesige Blinde (×3)', noLight: true, targetMult: 3, final: true },
   };
 
@@ -102,7 +102,7 @@
     gezeiten:  { name: 'Gezeitendeck',   desc: '+1 Hand pro Runde.' },
     gold:      { name: 'Goldenes Deck',  desc: 'Start mit $14 statt $4.' },
     silber:    { name: 'Silberdeck',     desc: 'Mondkraft startet bei 4 statt 2.' },
-    zwielicht: { name: 'Zwielichtdeck',  desc: 'Nur ♠ und ♥ – je 26 Karten.' },
+    zwielicht: { name: 'Zwielichtdeck',  desc: 'Nur ♠ und ♥, je 26 Karten.' },
   };
 
   // Belohnungen fürs Überspringen einer Blinde
@@ -111,6 +111,6 @@
     mondsegen: { name: 'Mondsegen',     desc: '+1 Mondkraft (dauerhaft)' },
     geschenk:  { name: 'Geschenk',      desc: 'Erhalte einen zufälligen Joker (sonst $5)' },
     sternregen:{ name: 'Sternenregen',  desc: 'Deine meistgespielte Pokerhand steigt um 2 Level' },
-    arkanum:   { name: 'Arkanum',       desc: 'Erhalte eine zufällige Arkana-Karte (Platz nötig)' },
+    arkanum:   { name: 'Arkanum',       desc: 'Erhalte eine zufällige Arkana-Karte (Platz im Vorrat nötig)' },
   };
 })(globalThis.LUN = globalThis.LUN || {});
