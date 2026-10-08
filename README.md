@@ -42,7 +42,7 @@ Rund um den Zyklus gibt es:
 
 ## Gestaltung
 
-Die Optik orientiert sich an **Cyanotypien**, den preußischblauen Lichtdrucken, mit denen im 19. Jahrhundert auch der Mond fotografiert wurde: eine körnige blaue Druckplatte, Spielkarten mit klassischen Kartenbildern, Belege und Tickets aus Papier, Joker als Linienzeichnungen (SVG, kein Emoji), Sternbilder als echte Sternkarten und Arkana mit ihren Tarot-Nummern. Blickfang ist die Mond-Umlaufbahn über dem Tisch, die sich nach jeder Hand um eine Phase dreht. Schriften: *IM Fell English* und *Alegreya Sans*.
+Die Optik verbindet **Cyanotypien**, die preußischblauen Lichtdrucke, mit denen im 19. Jahrhundert auch der Mond fotografiert wurde, mit dem Funk eines **70er-Planetariumsplakats im Risodruck**: körnige blaue Druckplatte, Neonpink leicht versetzt überdruckt, Rasterpunkte und ein Strahlenkranz. Spielkarten mit klassischen Kartenbildern liegen als aufgefächerte Hand auf dem Tisch, Tickets und Quittung schief daneben, Preise kleben als Sticker. Joker sind Linienzeichnungen (SVG, kein Emoji), die mit dem Mauszeiger kippen; Sternbilder sind echte Sternkarten, Arkana tragen ihre Tarot-Nummern. Blickfang ist die Mond-Umlaufbahn über dem Tisch, die sich nach jeder Hand um eine Phase dreht. Schriften: *Shrikhand* und *Alegreya Sans*.
 
 Tokens (Farben, klassische Schriftgrößenskala, Abstände, Ecken, Schatten, Bewegung) und Komponenten sind in [`docs/DESIGN.md`](docs/DESIGN.md) beschrieben.
 

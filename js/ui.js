@@ -104,7 +104,7 @@
     const tag = o.act ? 'button' : 'div';
     const btn = o.act ? ` type="button" data-act="${o.act}" aria-pressed="${o.selected ? 'true' : 'false'}"` : '';
     if (o.faceDown) {
-      return `<${tag} class="card back ${o.cls || ''} ${o.selected ? 'selected' : ''}" data-uid="${esc(c.uid)}"${btn} aria-label="Verdeckte Karte"><span class="back-in"></span></${tag}>`;
+      return `<${tag} class="card back ${o.cls || ''} ${o.selected ? 'selected' : ''}" data-uid="${esc(c.uid)}"${btn}${o.style ? ` style="${o.style}"` : ''} aria-label="Verdeckte Karte"><span class="back-in"></span></${tag}>`;
     }
     const stone = c.enh === 'stone';
     const rk = D.RANK_LABEL[c.rank];
@@ -119,7 +119,8 @@
     const corners = stone ? '' : `<span class="corner tl">${rk}<i>${sy}</i></span><span class="corner br">${rk}<i>${sy}</i></span>`;
     const enh = c.enh && !stone ? `<span class="enh-tag">${D.ENH[c.enh].short}</span>` : '';
     const label = cardName(c) + (o.lit ? ', beleuchtet' : '') + (o.debuff ? ', geschwächt' : '');
-    return `<${tag} class="${cls}" data-uid="${esc(c.uid)}" data-tip="${tip(cardTip(c, o))}" aria-label="${esc(label)}"${btn}>${corners}${center}${enh}</${tag}>`;
+    const style = o.style ? ` style="${o.style}"` : '';
+    return `<${tag} class="${cls}" data-uid="${esc(c.uid)}" data-tip="${tip(cardTip(c, o))}" aria-label="${esc(label)}"${btn}${style}>${corners}${center}${enh}</${tag}>`;
   }
 
   function jokerTip(j, owned) {
@@ -209,7 +210,7 @@
       caption = `<b>${ph.name}.</b> Gezählte ${names} geben +${S.mondkraft} Mult.`;
     }
     const nextTxt = next.suit === '*' ? 'der Vollmond, dann sind alle Farben beleuchtet' : `der ${next.name}&nbsp;<span class="ink-${next.suit}">${D.SUIT_SYM[next.suit]}</span>`;
-    return `<section class="moon-track" aria-label="Mondzyklus">
+    return `<section class="moon-track ${S.moon === D.FULL_MOON && !info.none ? 'full' : ''}" aria-label="Mondzyklus">
       <ol class="orbit">${moons}</ol>
       <p class="mt-caption">${caption} <span class="mt-next">Danach folgt ${nextTxt}.</span></p>
     </section>`;
@@ -234,7 +235,7 @@
       <div class="title-phases" aria-hidden="true">${phases}</div>
       <div class="title-grid">
         <div class="title-main">
-          <h1 class="logo">Lunaris</h1>
+          <h1 class="logo" aria-label="Lunaris">${'Lunaris'.split('').map((ch, i) => `<span aria-hidden="true" style="--wy:${(Math.sin(i * 1.1) * 0.07).toFixed(3)}em;--wr:${(Math.cos(i * 1.3) * 5).toFixed(1)}deg">${ch}</span>`).join('')}</h1>
           <p class="lede">Spiele Pokerhände gegen steigende Punktziele. Mit jeder Hand wandert der Mond eine Phase weiter und beleuchtet eine andere Farbe.</p>
           <div class="title-btns">
             ${has ? '<button type="button" class="btn btn-primary big" data-act="continue">Lauf fortsetzen</button>' : ''}
@@ -378,12 +379,17 @@
       const deb = L.isDebuffed(S, c);
       return { lit: !deb && L.isLit(S, c, info), debuff: deb };
     };
-    const play = playView ? playView.uids.filter((u) => S.cards[u]).map((u) => cardHTML(S.cards[u], Object.assign(cardOpts(S.cards[u]), { cls: playView.scoring.has(u) ? 'scoring' : 'nonscoring' }))).join('') : '';
+    // Gespielte Karten landen leicht schief, aber für jede Karte immer gleich
+    const tiltOf = (u) => ((L.hashSeed(u) % 9) - 4) * 1.2;
+    const play = playView ? playView.uids.filter((u) => S.cards[u]).map((u) => cardHTML(S.cards[u], Object.assign(cardOpts(S.cards[u]), { cls: playView.scoring.has(u) ? 'scoring' : 'nonscoring', style: `--tilt:${tiltOf(u)}deg` }))).join('') : '';
     const n = r.hand.length;
     const ov = n <= 6 ? 0.08 : n <= 8 ? -0.04 : n <= 10 ? -0.22 : -0.38;
-    const hand = r.hand.map((u) => {
+    // Die Hand ist aufgefächert wie echte Karten
+    const mid = (n - 1) / 2;
+    const fan = (i) => `--r:${((i - mid) * Math.min(3.2, 22 / Math.max(n, 1))).toFixed(2)}deg;--dy:${(Math.pow(i - mid, 2) * 1.6).toFixed(1)}px`;
+    const hand = r.hand.map((u, i) => {
       const c = S.cards[u];
-      return cardHTML(c, Object.assign(cardOpts(c), { act: 'card', selected: r.selected.includes(u), faceDown: r.faceDown.includes(u) }));
+      return cardHTML(c, Object.assign(cardOpts(c), { act: 'card', selected: r.selected.includes(u), faceDown: r.faceDown.includes(u), style: fan(i) }));
     }).join('');
     const canPlay = !busy && r.selected.length > 0 && r.handsLeft > 0;
     const canDisc = !busy && r.selected.length > 0 && r.discardsLeft > 0;
@@ -426,8 +432,8 @@
     if (S.pack) return packOpenHTML();
     const sh = S.shop;
     const slot = (inner, price, act, i, sold, soldTxt, verb) => `<div class="shop-slot ${sold ? 'sold' : ''}">
-        ${sold ? `<div class="sold-mark">${soldTxt}</div>` : inner}
-        ${sold ? '' : `<button type="button" class="btn btn-buy btn-small" data-act="${act}" data-idx="${i}" ${S.money < price ? 'disabled' : ''}>${verb} <span class="price">$${price}</span></button>`}
+        ${sold ? `<div class="sold-mark">${soldTxt}</div>` : `<div class="shop-item">${inner}<span class="price-tag" aria-hidden="true">$${price}</span></div>`}
+        ${sold ? '' : `<button type="button" class="btn btn-buy btn-small" data-act="${act}" data-idx="${i}" aria-label="${verb} für $${price}" ${S.money < price ? 'disabled' : ''}>${verb}</button>`}
       </div>`;
     const items = sh.items.map((it, i) => slot(it.sold ? '' : shopItemHTML(it), it.price, 'buy', i, it.sold, 'Gekauft', 'Kaufen')).join('');
     const packs = sh.packs.map((p, i) => slot(p.sold ? '' : packHTML(p.id), p.price, 'buy-pack', i, p.sold, 'Geöffnet', 'Öffnen')).join('');
@@ -649,6 +655,7 @@
     p.style.left = r.left + r.width / 2 + 'px';
     p.style.top = r.top + 'px';
     p.style.animationDuration = 900 / settings.speed + 'ms';
+    p.style.setProperty('--rot', (Math.random() * 14 - 7).toFixed(1) + 'deg');
     document.body.appendChild(p);
     setTimeout(() => p.remove(), 900 / settings.speed + 100);
   }
@@ -1013,6 +1020,21 @@
     t.style.top = y + 'px';
   }
   const onOver = (ev) => showTipFor(ev.target.closest('[data-tip]'));
+
+  // Joker & Co. kippen leicht in Richtung des Zeigers
+  let tiltEl = null;
+  function onPointerMove(ev) {
+    if (ev.pointerType !== 'mouse' || reducedMotion()) return;
+    const el = ev.target.closest && ev.target.closest('.joker, .cons, .pack');
+    if (tiltEl && tiltEl !== el) { tiltEl.style.removeProperty('--tx'); tiltEl.style.removeProperty('--ty'); }
+    tiltEl = el;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (ev.clientX - r.left) / r.width - 0.5;
+    const py = (ev.clientY - r.top) / r.height - 0.5;
+    el.style.setProperty('--tx', (-py * 18).toFixed(1) + 'deg');
+    el.style.setProperty('--ty', (px * 22).toFixed(1) + 'deg');
+  }
   const onFocus = (ev) => showTipFor(ev.target.closest && ev.target.closest('[data-tip]'));
 
   UI.init = function (data) {
@@ -1023,6 +1045,8 @@
     document.addEventListener('keydown', onKey);
     document.addEventListener('mouseover', onOver);
     document.addEventListener('focusin', onFocus);
+    document.addEventListener('pointermove', onPointerMove);
+    document.body.insertAdjacentHTML('afterbegin', A.DEFS);
     window.addEventListener('scroll', hideTip, true);
     window.addEventListener('resize', hideTip);
     UI.render();

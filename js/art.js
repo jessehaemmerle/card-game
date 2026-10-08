@@ -8,6 +8,12 @@
     `<svg class="art ${cls || ''}" viewBox="0 0 100 100" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
   const fillC = 'fill="currentColor" stroke="none"';
 
+  // Gemeinsame SVG-Muster: Rasterpunkte für die dunkle Mondseite (Risodruck)
+  A.DEFS = `<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+    <pattern id="raster" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+      <rect width="7" height="7" style="fill:var(--plate-ink)"/><circle cx="3.5" cy="3.5" r="1.5" style="fill:var(--chalk);fill-opacity:.2"/>
+    </pattern></defs></svg>`;
+
   // ---------- Mond ----------
   // p: beleuchteter Anteil (0 = Neumond, 1 = Vollmond), zunehmend von rechts
   A.moonShape = function (p, cx, cy, r) {
