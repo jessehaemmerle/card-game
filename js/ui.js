@@ -19,6 +19,7 @@
   let selCons = null;
   let modal = null;
   let modalReturn = null; // Element, das nach dem Schließen den Fokus zurückbekommt
+  let pendingConfirm = null; // { title, text, yes, run } für den Bestätigungsdialog
   let playView = null; // Karten auf dem Tisch während der Wertung
   let lastMoon = null; // für die Animation der Mondbahn
   let titleDeck = 'nacht';
@@ -482,6 +483,11 @@
     let title = '';
     let body = '';
     if (modal === 'help') { title = 'Anleitung'; body = helpHTML(); }
+    if (modal === 'confirm' && pendingConfirm) {
+      title = pendingConfirm.title;
+      body = `<p class="confirm-text">${pendingConfirm.text}</p>
+        <div class="opt-btns"><button type="button" class="btn btn-danger" data-act="confirm-yes">${pendingConfirm.yes}</button><button type="button" class="btn btn-quiet" data-act="close-modal">Abbrechen</button></div>`;
+    }
     if (modal === 'hands' && S) {
       title = 'Pokerhände';
       body = `<table class="hands-table"><thead><tr><th>Hand</th><th>Level</th><th>Chips × Mult</th><th>Gespielt</th></tr></thead><tbody>${D.HAND_ORDER.map((h) => {
@@ -717,6 +723,13 @@
     UI.render();
   }
 
+  // Eigener Bestätigungsdialog (window.confirm ist in eingebetteten Seiten oft gesperrt)
+  function askConfirm(title, text, yes, run) {
+    pendingConfirm = { title, text, yes, run };
+    modal = 'confirm';
+    UI.render();
+  }
+
   function newRun(deckId, seed) {
     S = G.newRun(deckId, seed);
     lastMoon = null;
@@ -732,8 +745,15 @@
     'new-run'() {
       const input = $('#seed-input');
       const seed = input ? input.value.trim() : '';
-      if (loadSave() && !window.confirm('Neuen Lauf starten? Dein gespeicherter Lauf wird dabei überschrieben.')) return;
-      newRun(titleDeck, seed);
+      if (!loadSave()) { newRun(titleDeck, seed); return; }
+      askConfirm('Neuen Lauf starten?', 'Dein gespeicherter Lauf wird dabei überschrieben.', 'Neuen Lauf starten', () => newRun(titleDeck, seed));
+    },
+    'confirm-yes'() {
+      const c = pendingConfirm;
+      pendingConfirm = null;
+      modal = null;
+      if (c) c.run();
+      else UI.render();
     },
     'new-run-same'() { newRun(S ? S.deckId : titleDeck); },
     continue() {
@@ -869,17 +889,17 @@
     endless() { G.continueEndless(S); UI.render(); },
     menu() { if (S && S.phase !== 'gameover') save(); S = null; modal = null; UI.render(); },
     abandon() {
-      if (!window.confirm('Lauf aufgeben? Er zählt dann als verloren.')) return;
-      recordEnd(false);
-      store.del(SAVE_KEY);
-      S = null;
-      modal = null;
-      UI.render();
+      askConfirm('Lauf aufgeben?', 'Der Lauf zählt dann als verloren und kann nicht fortgesetzt werden.', 'Lauf aufgeben', () => {
+        recordEnd(false);
+        store.del(SAVE_KEY);
+        S = null;
+        UI.render();
+      });
     },
     'show-hands'() { modalReturn = '[data-act="show-hands"]'; modal = 'hands'; UI.render(); },
     'show-deck'() { modalReturn = '[data-act="show-deck"]'; modal = 'deck'; UI.render(); },
     'show-settings'() { modalReturn = '[data-act="show-settings"]'; modal = 'settings'; UI.render(); },
-    'close-modal'() { modal = null; UI.render(); },
+    'close-modal'() { modal = null; pendingConfirm = null; UI.render(); },
     speed(el) { settings.speed = +el.dataset.v; store.set(SETTINGS_KEY, settings); UI.render(); },
     'toggle-sound'() { settings.sound = !settings.sound; L.audio.enabled = settings.sound; store.set(SETTINGS_KEY, settings); UI.render(); },
   };
@@ -901,7 +921,7 @@
   function onKey(ev) {
     if (ev.target && ev.target.tagName === 'INPUT') return;
     if (ev.key === 'Escape') {
-      if (modal) { modal = null; UI.render(); } else if (selJoker || selCons) { selJoker = selCons = null; UI.render(); }
+      if (modal) { modal = null; pendingConfirm = null; UI.render(); } else if (selJoker || selCons) { selJoker = selCons = null; UI.render(); }
       return;
     }
     if (modal && ev.key === 'Tab') {
@@ -959,8 +979,9 @@
   const onOver = (ev) => showTipFor(ev.target.closest('[data-tip]'));
   const onFocus = (ev) => showTipFor(ev.target.closest && ev.target.closest('[data-tip]'));
 
-  UI.init = function () {
+  UI.init = function (data) {
     settings = Object.assign(settings, store.get(SETTINGS_KEY) || {});
+    if (data && data.state && data.state.version === 1) S = data.state;
     L.audio.enabled = settings.sound;
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', onKey);
@@ -973,4 +994,6 @@
 
   // Für Tests/Debugging in der Konsole
   UI.state = () => S;
+  // Zustand für ein Seiten-Update ohne Neustart (nicht mitten in einer Wertung)
+  UI.snapshot = () => ({ state: busy ? null : S });
 })(globalThis.LUN = globalThis.LUN || {});

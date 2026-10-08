@@ -4,6 +4,7 @@
    Eine laute Stelle: die Mondbahn. Alles andere bleibt ruhig.
    ========================================================== */
 :root {
+  color-scheme: dark;
   --plate: #1d3b6a;
   --plate-deep: #142c52;
   --plate-ink: #0e2142;
@@ -451,6 +452,7 @@ div.card { cursor: default; }
 .opt-row > div { display: flex; gap: 6px; }
 .keys { color: var(--fg-dim); font-size: 15px; text-align: right; max-width: 40ch; }
 .opt-btns { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 16px; }
+.confirm-text { font-size: 17px; max-width: 46ch; }
 code { font-family: var(--sans); font-weight: 700; letter-spacing: 0.08em; }
 
 /* Tooltip, Hinweise, Wertungs-Stempel */
@@ -509,7 +511,7 @@ code { font-family: var(--sans); font-weight: 700; letter-spacing: 0.08em; }
   :root { --cw: clamp(44px, 12.4vw, 70px); --jw: clamp(40px, 10.8vw, 62px); }
   .run { grid-template-columns: 1fr; }
   .side {
-    position: static; height: auto; display: grid; gap: 8px 14px; padding: 12px 14px; border-right: 0; border-bottom: 3px double var(--line);
+    position: static; height: auto; display: grid; gap: 8px 14px; padding: 12px 16px; border-right: 0; border-bottom: 3px double var(--line);
     grid-template-columns: 1fr 1fr; grid-template-areas: 'blind blind' 'score hand' 'ledger ledger' 'btns btns';
   }
   .side-logo { display: none; }
@@ -528,7 +530,7 @@ code { font-family: var(--sans); font-weight: 700; letter-spacing: 0.08em; }
   .ledger dd { font-size: 17px; }
   .ledger dt { font-size: 14px; }
   .side-btns { grid-area: btns; }
-  .board { padding: 10px 10px 16px; min-height: auto; gap: 10px; }
+  .board { padding: 10px 16px 16px; min-height: auto; gap: 10px; }
   .top-row { gap: 10px; }
   .tray-label { font-size: 16px; margin-bottom: 4px; }
   .tray-items { gap: 5px; }
