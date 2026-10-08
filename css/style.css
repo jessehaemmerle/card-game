@@ -50,6 +50,11 @@
   --enh-bonus: #d3e8e2; --enh-mult: #f8d9c2; --enh-glass: #e7efe6; --enh-steel: #d9d4ca;
   --enh-gold: #f3d283; --enh-silver: #e6e1d6; --stone: #a39380; --stone-edge: #7d6e5c;
   --drop: rgba(15, 7, 3, 0.6);
+  /* Material: gebürstetes Aluminium, Chrom, Tastenschlitz */
+  --alu: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0 1px, transparent 1px 3px), linear-gradient(#e4ddcf, #c4bcad);
+  --alu-edge: #8a8274;
+  --chrome: #b9b09e;
+  --key-line: #1a0e07;
   --scrim: rgba(25, 12, 6, 0.75);
 
   /* Kontextfarben: auf dem Tisch hell, auf Karton dunkel */
@@ -162,30 +167,39 @@ h1, h2, h3 { text-wrap: balance; }
 .stripes i:nth-child(4) { background: var(--st4); }
 .stripes i:nth-child(5) { background: var(--st5); }
 
-/* ---------- Buttons: Pillen mit dickem Versatzschatten ---------- */
+/* ---------- Buttons: Tasten wie am Kassettendeck ----------
+   Jede Taste hat eine Oberseite mit harter Glanzkante und eine dunklere Vorderkante (--lip),
+   die beim Drücken verschwindet. Umschalter rasten eingedrückt ein und haben ein Lämpchen. */
 .btn {
-  --bg: transparent; --fgc: var(--fg); --edge: var(--rule);
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  min-height: 44px; padding: 9px 22px; border: 2px solid var(--edge); border-radius: var(--r-pill);
-  background: var(--bg); color: var(--fgc); font-family: var(--groovy); font-size: var(--t-3); line-height: 1.1; letter-spacing: 0.02em;
-  cursor: pointer; white-space: nowrap; box-shadow: 0 4px 0 var(--edge);
-  transition: transform 0.08s, box-shadow 0.08s;
+  --bg: var(--alu); --hi: rgba(255, 255, 255, 0.6); --fgc: var(--ink); --edge: var(--alu-edge); --lip: 5px;
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 9px 20px; margin-bottom: 4px;
+  border: 2px solid var(--key-line); border-radius: 9px 9px 12px 12px;
+  background: linear-gradient(var(--hi) 0 2px, transparent 2px), var(--bg);
+  color: var(--fgc); font-family: var(--groovy); font-size: var(--t-3); line-height: 1.1; letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 var(--hi);
+  box-shadow: 0 var(--lip) 0 var(--edge), 0 var(--lip) 0 2px var(--key-line);
+  cursor: pointer; white-space: nowrap; transition: translate 0.07s, box-shadow 0.07s;
 }
-.btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 0 var(--edge); }
-.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--edge); }
-.btn:disabled { --bg: transparent; --fgc: var(--fg-dim); --edge: var(--rule); box-shadow: none; cursor: not-allowed; opacity: 0.7; }
-.btn.big { font-size: var(--t-4); padding: 12px 28px; min-height: 52px; }
+.btn:hover:not(:disabled) { --lip: 6px; translate: 0 -1px; }
+.btn:active:not(:disabled) { --lip: 1px; translate: 0 4px; }
+.btn.big { font-size: var(--t-4); padding: 12px 28px; min-height: 52px; --lip: 6px; }
+.btn.big:hover:not(:disabled) { --lip: 7px; }
 .btn-small { font-size: var(--t-2); padding: 7px 16px; min-height: 40px; }
-.btn-tiny, .btn-tiny:hover:not(:disabled) { font-size: var(--t-2); padding: 5px 12px; min-height: 36px; box-shadow: none; }
-.btn-primary { --bg: var(--mustard); --fgc: var(--ink); --edge: var(--mustard-edge); }
-.btn-danger { --bg: var(--orange); --fgc: var(--ink); --edge: var(--orange-edge); }
-.btn-buy { --bg: var(--avocado); --fgc: var(--ink); --edge: var(--avocado-edge); }
-.btn-quiet, .btn-quiet:hover:not(:disabled), .btn-quiet:active:not(:disabled) { --bg: transparent; --fgc: var(--fg); --edge: var(--rule); box-shadow: none; }
-.btn-quiet:hover:not(:disabled) { --bg: var(--line-faint); }
-.btn-quiet.on { --bg: var(--cream); --fgc: var(--ink); --edge: var(--cream); }
-.ticket .btn-quiet, .end-box .btn-quiet, .modal-box .btn-quiet { --edge: rgba(58, 34, 21, 0.45); }
-.ticket .btn-quiet:hover:not(:disabled), .end-box .btn-quiet:hover:not(:disabled), .modal-box .btn-quiet:hover:not(:disabled) { --bg: var(--ink-faint); }
-.modal-box .btn-quiet.on { --bg: var(--ink); --fgc: var(--paper); --edge: var(--ink); }
+.btn-tiny { font-size: var(--t-2); padding: 5px 12px; min-height: 36px; --lip: 3px; border-radius: 7px 7px 9px 9px; }
+.btn-tiny:hover:not(:disabled) { --lip: 4px; }
+.btn-primary { --bg: var(--mustard); --edge: var(--mustard-edge); }
+.btn-danger { --bg: var(--orange); --edge: var(--orange-edge); --hi: rgba(255, 225, 190, 0.55); }
+.btn-buy { --bg: var(--avocado); --edge: var(--avocado-edge); --hi: rgba(240, 250, 200, 0.55); }
+/* Eingerastet: tiefer, ohne Glanz */
+.btn.on, .btn.on:hover:not(:disabled) { --lip: 2px; --hi: rgba(255, 255, 255, 0.2); translate: 0 3px; }
+/* Umschalter tragen ein Lämpchen, das im eingerasteten Zustand leuchtet */
+.btn[aria-pressed]::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #5c5246; box-shadow: 0 0 0 1.5px var(--key-line); }
+.btn[aria-pressed="true"]::before { background: var(--st3); }
+.btn:disabled, .btn:disabled:hover {
+  --bg: #5a4636; --edge: #33251b; --hi: rgba(255, 255, 255, 0.08); --fgc: rgba(244, 230, 200, 0.6); --lip: 5px;
+  translate: none; cursor: not-allowed;
+}
 .btn.blocked { opacity: 0.5; }
 
 /* ---------- Mond & Linienzeichnungen (SVG) ---------- */
@@ -247,17 +261,31 @@ h1, h2, h3 { text-wrap: balance; }
 
 /* ---------- Lauf-Layout ---------- */
 .run { display: grid; grid-template-columns: 272px minmax(0, 1fr); min-height: 100vh; }
-/* Seitenleiste: Holzfurnier wie an der Spielkonsole */
+/* Seitenleiste: ein Steuergerät von 1976. Nussholz mit Chromleiste, Typenschild aus Aluminium,
+   Dymo-Etiketten über Zählwerken, ein Skalenfenster mit Zeiger und eine Tastenbank. */
 .side {
-  display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5) var(--sp-4);
+  display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5) 22px var(--sp-4) var(--sp-4);
   background: var(--tex-wood), linear-gradient(90deg, #6b3c1e, var(--wood) 40%, #4f2b15);
-  border-right: 4px solid var(--plastic); box-shadow: inset -3px 0 0 rgba(255, 220, 170, 0.08);
+  box-shadow: inset -2px 0 0 var(--key-line), inset -5px 0 0 var(--chrome), inset -8px 0 0 var(--key-line), inset -10px 0 0 rgba(255, 220, 170, 0.1);
   height: 100vh; position: sticky; top: 0; overflow-y: auto;
 }
-.side-logo { font-family: var(--display); font-size: var(--t-7); line-height: 1; text-shadow: var(--stack-sm); margin-bottom: calc(var(--sp-2) * -1); }
-.side > .stripes { height: 20px; flex: none; }
-.led-blind { display: flex; gap: var(--sp-3); align-items: flex-start; }
+/* Typenschild: gebürstetes Aluminium mit zwei Schrauben, darunter das Streifenband */
+.side-logo {
+  position: relative; display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2);
+  padding: 10px 26px 8px; border-radius: 8px 8px 0 0; box-shadow: 0 0 0 2px var(--key-line);
+  font-family: var(--display); font-size: var(--t-7); line-height: 1; color: var(--ink); text-shadow: 1.5px 1.5px 0 var(--st1), 3px 3px 0 var(--st3);
+  background:
+    radial-gradient(circle at 11px 50%, #4d463c 0 1px, #9a9282 1px 3.5px, var(--key-line) 3.5px 4.5px, transparent 5px),
+    radial-gradient(circle at calc(100% - 11px) 50%, #4d463c 0 1px, #9a9282 1px 3.5px, var(--key-line) 3.5px 4.5px, transparent 5px),
+    var(--alu);
+}
+.side-logo::after { content: 'Typ 1976'; white-space: nowrap; font-family: var(--groovy); font-size: var(--t-1); color: #4d463c; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); }
+.side > .stripes { height: 14px; flex: none; margin-top: calc(var(--sp-4) * -1); border-radius: 0 0 6px 6px; box-shadow: 0 0 0 2px var(--key-line); }
+.led-blind { display: flex; gap: var(--sp-3); align-items: center; }
 .sigil { flex: none; width: 46px; height: 46px; color: var(--cream); }
+/* Das Siegel der Blinde sitzt in einem Bullauge mit Chromring */
+.side .sigil { width: 54px; height: 54px; padding: 9px; border-radius: 50%; background: var(--key-line); box-shadow: 0 0 0 3px var(--chrome), 0 0 0 5px var(--key-line); }
+.side .led-blind > div { min-width: 0; }
 .sigil.big { width: 64px; height: 64px; }
 .led-blind.boss .sigil { color: var(--mustard); }
 .led-title { font-family: var(--display); font-size: var(--t-6); line-height: 1.1; }
@@ -269,6 +297,24 @@ h1, h2, h3 { text-wrap: balance; }
 .ledger dt { color: var(--fg-dim); font-size: var(--t-2); font-family: var(--groovy); }
 .ledger dd { margin: 0; font-family: var(--groovy); font-size: var(--t-5); }
 .ledger dd small { font-size: var(--t-2); color: var(--fg-dim); }
+/* In der Seitenleiste: Dymo-Prägeband über einem Zählwerk wie am Kassettendeck */
+.side .ledger { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+.side .ledger > div, .side .ledger > div:first-child { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 6px; padding: 0; border: 0; }
+.side .ledger dt {
+  --tape: #241c17;
+  padding: 1px 8px 2px; border-radius: 2px; rotate: -1.5deg; color: #f7f2e8; letter-spacing: 0.05em;
+  background: linear-gradient(rgba(255, 255, 255, 0.16) 0 1px, transparent 1px calc(100% - 2px), rgba(0, 0, 0, 0.35) calc(100% - 2px)), var(--tape);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.2); box-shadow: 1px 2px 0 var(--drop);
+}
+.side .ledger > div:nth-child(even) dt { rotate: 1deg; }
+.side .ledger .k-target dt { --tape: #7d2f0a; }
+.side .ledger .k-money dt { --tape: #46500f; }
+.side .ledger .k-moon dt { --tape: #0e5252; }
+.side .ledger dd {
+  align-self: stretch; margin: 0 4px; padding: 3px 10px 2px; border-radius: 5px; text-align: right; line-height: 1.25;
+  background: linear-gradient(#050302, #2c2420 24%, #3d342e 50%, #2c2420 76%, #050302);
+  box-shadow: inset 0 0 0 1px #000, 0 0 0 2px var(--chrome), 0 0 0 4px var(--key-line);
+}
 
 /* Punkte im schwarzen Anzeigefenster */
 .led-score {
@@ -278,8 +324,18 @@ h1, h2, h3 { text-wrap: balance; }
 }
 .led-label { color: var(--cream-dim); font-family: var(--groovy); font-size: var(--t-2); }
 .led-big { font-family: var(--groovy); font-size: var(--t-8); line-height: 1.1; color: var(--st2); text-shadow: 0 0 1px var(--st2); }
-.led-bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: rgba(244, 230, 200, 0.12); overflow: hidden; }
-.led-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--st4), var(--st3), var(--st2), var(--st1)); transition: width 0.4s; }
+.led-score { box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.5), 0 0 0 2px var(--chrome), 0 0 0 4px var(--key-line); }
+/* Skala wie am Radio: Striche bis zum Ziel, ein roter Zeiger zeigt den Stand */
+.led-bar {
+  position: relative; grid-column: 1 / -1; height: 14px; margin: 2px 2px 0;
+  background:
+    repeating-linear-gradient(90deg, var(--cream) 0 2px, transparent 2px 25%) left bottom / 100% 10px no-repeat,
+    repeating-linear-gradient(90deg, var(--cream-dim) 0 1px, transparent 1px 5%) left bottom / 100% 5px no-repeat,
+    linear-gradient(var(--cream-dim), var(--cream-dim)) left bottom / 100% 1px no-repeat;
+}
+.led-bar::after { content: ''; position: absolute; right: 0; bottom: 0; width: 2px; height: 14px; background: var(--mustard); }
+.led-bar > span { position: relative; display: block; height: 100%; max-width: 100%; transition: width 0.6s var(--ease-orbit); }
+.led-bar > span::after { content: ''; position: absolute; z-index: 1; right: -2px; top: -5px; bottom: -3px; width: 4px; border-radius: 2px; background: var(--st3); box-shadow: 0 0 0 1px var(--key-line); }
 
 .hand-panel { padding: var(--sp-2) 0 2px; }
 .hp-name { font-family: var(--display); font-size: var(--t-5); min-height: 30px; line-height: 1.2; text-shadow: var(--stack-sm); }
@@ -288,13 +344,21 @@ h1, h2, h3 { text-wrap: balance; }
 .hp-name .total { font-family: var(--display); font-size: var(--t-8); text-shadow: var(--stack-md); }
 .hand-panel.enough .total { text-shadow: var(--stack-lg); }
 .hp-cm { display: flex; align-items: stretch; gap: var(--sp-2); margin-top: var(--sp-2); }
-.hp-chips, .hp-mult { flex: 1; padding: 6px 12px; border-radius: var(--r-ui); font-family: var(--groovy); font-size: var(--t-6); line-height: 1.1; transition: opacity 0.2s; box-shadow: 0 3px 0 var(--drop); }
+.hp-chips, .hp-mult {
+  flex: 1; padding: 6px 12px; border-radius: var(--r-ui); font-family: var(--groovy); font-size: var(--t-6); line-height: 1.1; transition: opacity 0.2s;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.28) 0 2px, transparent 2px);
+  box-shadow: 0 0 0 2px var(--key-line), 0 4px 0 2px var(--drop);
+}
 .hp-chips { background: var(--teal); color: var(--cream); text-align: right; }
 .hp-mult { background: var(--orange); color: var(--ink); }
 .hp-x { align-self: center; font-family: var(--display); font-size: var(--t-5); color: var(--mustard); }
 .hand-panel.idle .hp-chips, .hand-panel.idle .hp-mult { opacity: 0.35; }
-.side-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
-.side-btns .btn { flex: 1 1 auto; }
+/* Tastenbank: Alu-Tasten in einem schwarzen Schlitz */
+.side-btns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 6px; margin-top: auto; padding: 8px 8px 6px;
+  border-radius: 12px; background: #140b06; box-shadow: inset 0 4px 0 rgba(0, 0, 0, 0.6), 0 0 0 2px var(--chrome), 0 0 0 4px var(--key-line);
+}
+.side-btns .btn { min-height: 38px; padding: 6px 8px; border-radius: 6px 6px 9px 9px; }
 
 .board { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5) var(--sp-3); min-width: 0; min-height: 100vh; overflow: clip; overflow-clip-margin: 40px; }
 /* Das Spielfeld: eingelassener Cord mit Chromleiste und Ziernaht */
@@ -699,13 +763,14 @@ code { font-family: var(--groovy); letter-spacing: 0.08em; }
   .tagline { font-size: var(--t-5); }
   .run { grid-template-columns: 1fr; }
   .side {
-    position: static; height: auto; display: grid; gap: var(--sp-2) 14px; padding: var(--sp-3) var(--sp-4); border-right: 0; border-bottom: 4px solid var(--plastic);
+    position: static; height: auto; display: grid; gap: var(--sp-3) 14px; padding: var(--sp-3) var(--sp-4);
+    box-shadow: inset 0 -2px 0 var(--key-line), inset 0 -5px 0 var(--chrome), inset 0 -8px 0 var(--key-line); padding-bottom: 20px;
     grid-template-columns: 1fr 1fr; grid-template-areas: 'blind blind' 'score hand' 'ledger ledger' 'btns btns';
   }
   .side-logo, .side > .stripes { display: none; }
   .side > .led-blind { grid-area: blind; }
   .side > .ledger:not(:last-of-type) { display: none; }
-  .led-blind .sigil { width: 34px; height: 34px; }
+  .led-blind .sigil, .side .sigil { width: 38px; height: 38px; padding: 6px; }
   .led-title { font-size: var(--t-5); }
   .led-rule { font-size: var(--t-2); }
   .led-score { grid-area: score; align-self: start; padding: 6px 10px 8px; }
@@ -713,11 +778,11 @@ code { font-family: var(--groovy); letter-spacing: 0.08em; }
   .hand-panel { grid-area: hand; padding: 0; }
   .hp-name { font-size: var(--t-4); min-height: 22px; }
   .hp-chips, .hp-mult { font-size: var(--t-4); padding: var(--sp-1) 8px; }
-  .side > .ledger:last-of-type { grid-area: ledger; display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 14px; }
-  .side > .ledger:last-of-type > div:nth-child(-n+3) { border-top: 1px solid var(--rule); }
+  .side > .ledger:last-of-type { grid-area: ledger; grid-template-columns: repeat(3, 1fr); gap: 10px 12px; }
   .ledger dd { font-size: var(--t-4); }
   .ledger dt { font-size: var(--t-2); }
-  .side-btns { grid-area: btns; }
+  .side-btns { grid-area: btns; grid-template-columns: repeat(4, 1fr); gap: 6px 4px; padding: 6px 6px 4px; }
+  .side-btns .btn { min-height: 34px; padding: 4px 2px; font-size: var(--t-1); letter-spacing: 0; }
   .board { padding: 10px var(--sp-4) var(--sp-4); min-height: auto; gap: 12px; }
   .field { padding: var(--sp-2) var(--sp-2) var(--sp-3); border-radius: 20px; }
   .field::after { inset: 6px; border-radius: 15px; }
@@ -748,7 +813,7 @@ code { font-family: var(--groovy); letter-spacing: 0.08em; }
   .hand .card.selected { --lift: -20px; }
   .controls { flex-wrap: nowrap; gap: var(--sp-2); width: 100%; }
   .btn-play, .btn-discard { min-width: 0; flex: 1; font-size: var(--t-3); padding: 9px var(--sp-2); }
-  .sort-box { flex-direction: column; }
+  .sort-box { flex-direction: column; gap: 8px; }
   .sort-box .btn { min-height: 34px; padding: 3px var(--sp-2); font-size: var(--t-1); }
   .deck-pile { position: static; flex-direction: row; }
   .screen-title { font-size: var(--t-7); }

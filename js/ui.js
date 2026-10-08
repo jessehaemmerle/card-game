@@ -332,8 +332,8 @@
         ${boss ? `<p class="led-rule">${esc(boss.desc)}${r.lockedType ? `. Erlaubt ist nur noch ${D.HANDS[r.lockedType].name}.` : ''}</p>` : ''}</div>
       </div>
       <dl class="ledger">
-        <div><dt>Ziel</dt><dd class="v-target">${fmt(r.target)}</dd></div>
-        <div><dt>Belohnung</dt><dd class="v-money">$${r.reward}</dd></div>
+        <div class="k-target"><dt>Ziel</dt><dd class="v-target">${fmt(r.target)}</dd></div>
+        <div class="k-money"><dt>Belohnung</dt><dd class="v-money">$${r.reward}</dd></div>
       </dl>`;
     } else {
       const label = S.phase === 'shop' ? 'Shop' : S.phase === 'victory' ? 'Gewonnen' : `Ante ${S.ante}`;
@@ -362,8 +362,8 @@
       <dl class="ledger">
         <div><dt>Hände</dt><dd>${r ? r.handsLeft : '–'}</dd></div>
         <div><dt>Abwürfe</dt><dd>${r ? r.discardsLeft : '–'}</dd></div>
-        <div><dt>Geld</dt><dd class="v-money" id="money-value">$${S.money}</dd></div>
-        <div><dt>Mondkraft</dt><dd class="v-moon">+${S.mondkraft}</dd></div>
+        <div class="k-money"><dt>Geld</dt><dd class="v-money" id="money-value">$${S.money}</dd></div>
+        <div class="k-moon"><dt>Mondkraft</dt><dd class="v-moon">+${S.mondkraft}</dd></div>
         <div><dt>Ante</dt><dd>${S.ante} <small>von ${D.FINAL_ANTE}</small></dd></div>
         <div><dt>Runde</dt><dd>${roundNo}</dd></div>
       </dl>

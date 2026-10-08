@@ -35,6 +35,7 @@ Die Siebziger-Streifen laufen von hell nach dunkel: `#f2b52b`, `#f08b1f`, `#e05a
 | Schatten | `--shadow-obj` / `--shadow-slip` | harter Versatz ohne Unschärfe |
 | Streifenschatten | `--stack-lg` / `--stack-md` / `--stack-sm` | gestaffelte Kopien in den Streifenfarben hinter Display-Schrift |
 | Texturen | `--tex-grain`, `--tex-wood`, `--tex-cord`, `--tex-rib`, `--stripes-h` | Korn, Holzmaserung, Cordrippen, Rippenplastik, Streifenband |
+| Material | `--alu`, `--alu-edge`, `--chrome`, `--key-line` | gebürstetes Aluminium für Tasten und Typenschild, Chromringe, Tintenrand der Tasten |
 | Bewegung | `--dur-quick`, `--dur-orbit`, `--ease-orbit`, `--ease-boing` | 0,12 s Rückmeldung, 0,8 s Umlaufbahn, federnder Überschwinger |
 | Kontext | `--fg`, `--fg-dim`, `--rule` | auf Tisch und Holz hell, in Karton-Containern automatisch dunkel |
 
@@ -46,22 +47,29 @@ Karton-Container (`.ticket`, `.receipt`, `.modal-box`, `.end-box`, `#tooltip`, `
 
 Logo mit gestaffeltem Streifenschatten und tanzenden Buchstaben, Untertitel, Plaketten wie auf einer Spielschachtel („1 Spieler“, „ab 10 Jahren“, „ca. 30 Min.“), ein Streifen-Schwung von unten rechts und die Spielvarianten in einer Rippenplastik-Ablage.
 
-### Button `.btn`
+### Taste `.btn`
 
-Pillenform mit dickem Versatzschatten, Schrift Righteous.
+Tasten wie an einem Kassettendeck von 1976: eine Oberseite mit harter Glanzkante (`--hi`), eine dunklere Vorderkante (`--lip`) und ein Tintenrand um beides. Beim Überfahren hebt sich die Taste um 1 px, beim Drücken verschwindet die Vorderkante und die Taste sinkt ein. Schrift Righteous, Ecken leicht tastenförmig (unten runder als oben).
 
 | Variante | Einsatz |
 |---|---|
 | `.btn-primary` (Senf) | die eine Hauptaktion eines Bildschirms |
 | `.btn-danger` (Orange) | Abwerfen, Verkaufen, Lauf aufgeben |
 | `.btn-buy` (Avocado) | alles, was Geld kostet |
-| `.btn-quiet` (Kontur) | Nebenaktionen; `.on` markiert den aktiven Umschalter |
+| `.btn-quiet` (gebürstetes Aluminium) | Nebenaktionen, auf Holz, Cord und Karton gleich |
 
-Größen: `.btn-tiny` (36 px, auf Touch 44 px), `.btn-small` (40 px), Standard (44 px), `.big` (52 px). Zustände: angehoben beim Überfahren, gedrückt, deaktiviert (nur Kontur), `.blocked` (erklärt beim Klick, warum es nicht geht).
+Umschalter (`aria-pressed`) tragen ein Lämpchen, das im eingeschalteten Zustand orange leuchtet; `.on` lässt die Taste eingedrückt einrasten. Größen: `.btn-tiny` (36 px, auf Touch 44 px, Vorderkante 3 px), `.btn-small` (40 px), Standard (44 px), `.big` (52 px, Vorderkante 6 px). Deaktiviert: dunkelbraune Taste mit blasser Schrift. `.blocked` erklärt beim Klick, warum es nicht geht.
 
-### Konsole (Seitenleiste)
+### Steuergerät (Seitenleiste)
 
-Holzfurnier mit Streifenband unter dem Logo. Die Punkte stehen in einem schwarzen Anzeigefenster mit orangen Ziffern, der Fortschritt als Streifen-Balken. Chips stehen auf Petrol, Mult auf Orange.
+Die Seitenleiste ist ein Steuergerät aus Nussholz mit Chromleiste am Rand:
+
+- **Typenschild:** gebürstetes Aluminium mit zwei Schrauben, „Lunaris“ in Tinte mit Streifenschatten, „Typ 1976“ eingraviert, darunter das Streifenband.
+- **Bullauge:** Das Siegel der Blinde sitzt in einem schwarzen Rund mit Chromring.
+- **Dymo-Etiketten über Zählwerken:** Jeder Wert steht in einem Zählwerk-Fenster wie am Kassettendeck (dunkle Walze, Chromrahmen), darüber ein schief geklebtes Prägeband. Schwarzes Band für Zahlen, Rot für das Ziel, Avocado für Geld, Petrol für die Mondkraft. Weiße Prägeschrift erreicht auf allen Bändern mindestens 7,8:1.
+- **Skalenfenster:** Die Punkte stehen in orangen Ziffern im schwarzen Fenster, darunter eine Radioskala bis zum Ziel (Senfstrich) mit rotem Zeiger. Dahinter steigt die Lavalampe.
+- **Hand-Anzeige:** Chips auf Petrol, Mult auf Orange, beide mit Glanzkante und Tintenrand.
+- **Tastenbank:** Alu-Tasten in einem schwarzen Schlitz mit Chromrahmen, auf dem Desktop 2×2, auf dem Handy in einer Reihe.
 
 ### Spielkarte `.card`
 
