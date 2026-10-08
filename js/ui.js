@@ -231,11 +231,18 @@
     const record = p.runs
       ? `Bisher ${p.runs} ${p.runs === 1 ? 'Lauf' : 'Läufe'} und ${p.wins} ${p.wins === 1 ? 'Sieg' : 'Siege'}. Beste Ante: ${p.bestAnte}, beste Hand: ${fmt(p.bestHand)} Punkte.`
       : 'Noch kein Lauf gespielt.';
+    // Der Titel ist ein Schachteldeckel aus den 70ern
+    const swoosh = `<svg class="swoosh" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">${[1, 2, 3, 4, 5].map((k) =>
+      `<path d="M330 ${650 + k * 22} C 620 ${640 + k * 22}, 760 ${500 + k * 22}, 860 ${300 + k * 22} S 990 ${30 + k * 22}, 1090 ${-20 + k * 22}" class="st${k}"/>`).join('')}</svg>`;
     return `<div class="title-screen">
+     <div class="box-lid">
+      ${swoosh}
       <div class="title-phases" aria-hidden="true">${phases}</div>
       <div class="title-grid">
         <div class="title-main">
           <h1 class="logo" aria-label="Lunaris">${'Lunaris'.split('').map((ch, i) => `<span aria-hidden="true" style="--wy:${(Math.sin(i * 1.1) * 0.07).toFixed(3)}em;--wr:${(Math.cos(i * 1.3) * 5).toFixed(1)}deg">${ch}</span>`).join('')}</h1>
+          <p class="tagline">Das Kartenspiel unterm Mond</p>
+          <ul class="badges" aria-label="Spielangaben"><li><b>1</b> Spieler</li><li>ab <b>10</b> Jahren</li><li>ca. <b>30</b> Min.</li></ul>
           <p class="lede">Spiele Pokerhände gegen steigende Punktziele. Mit jeder Hand wandert der Mond eine Phase weiter und beleuchtet eine andere Farbe.</p>
           <div class="title-btns">
             ${has ? '<button type="button" class="btn btn-primary big" data-act="continue">Lauf fortsetzen</button>' : ''}
@@ -245,12 +252,14 @@
           <p class="record">${record}</p>
         </div>
         <div class="title-decks">
-          <h2 class="title-h2">Deck</h2>
+          <h2 class="title-h2">Spielvariante</h2>
           <div class="decks">${decks}</div>
           <p class="deck-desc" id="deck-desc">${D.DECKS[titleDeck].desc}</p>
           <label class="seed-row" for="seed-input">Seed <input id="seed-input" maxlength="12" placeholder="zufällig" autocomplete="off" spellcheck="false"></label>
         </div>
       </div>
+      <p class="imprint">Ausgabe 1976. Eine Patience mit Pokerhänden für lange Nächte.</p>
+     </div>
     </div>`;
   }
 
@@ -294,6 +303,7 @@
       </div>` : ''}` : '';
     return `<aside class="side" aria-label="Rundeninfo">
       <div class="side-logo">Lunaris</div>
+      <div class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
       ${blind}
       ${scoring}
       <dl class="ledger">
@@ -654,10 +664,11 @@
     p.textContent = text;
     p.style.left = r.left + r.width / 2 + 'px';
     p.style.top = r.top + 'px';
-    p.style.animationDuration = 900 / settings.speed + 'ms';
+    const dur = (cls === 'slang' ? 1500 : 900) / settings.speed;
+    p.style.animationDuration = dur + 'ms';
     p.style.setProperty('--rot', (Math.random() * 14 - 7).toFixed(1) + 'deg');
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 900 / settings.speed + 100);
+    setTimeout(() => p.remove(), dur + 100);
   }
 
   function bump(el, cls) {
@@ -733,6 +744,10 @@
     hp.classList.add('scored');
     if (before + res.total >= S.round.target) hp.classList.add('enough');
     announce(`${D.HANDS[res.type].name}: ${fmt(res.total)} Punkte`);
+    const ratio = res.total / S.round.target;
+    const word = ratio >= 3 ? 'Irre!' : ratio >= 1 ? 'Dufte!' : ratio >= 0.6 ? 'Spitze!' : ratio >= 0.3 ? 'Klasse!' : null;
+    const area = $('#play-area');
+    if (word && area) popup(area, word, 'slang');
     sfx('total');
     await countUp($('#round-score'), before, before + res.total, 600);
     const bar = $('.led-bar > span');

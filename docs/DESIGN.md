@@ -2,27 +2,28 @@
 
 Alle Werte stehen als CSS-Variablen am Anfang von `css/style.css`. Regeln verwenden ausschließlich diese Tokens; feste Farben oder Pixelgrößen gehören nicht in Komponenten.
 
-## Theme: Cyanotypie trifft Risodruck
+## Theme: Ausgabe 1976
 
-Grundlage sind die preußischblauen Lichtdrucke (Cyanotypien) des 19. Jahrhunderts, mit denen auch der Mond fotografiert wurde: eine körnige blaue Druckplatte, darauf Dinge aus Papier und weiße Linienzeichnungen. Darüber liegt der Funk eines 70er-Planetariumsplakats im Risodruck: Neonpink, leicht versetzt überdruckt, Rasterpunkte, ein Strahlenkranz und Dinge, die schief auf dem Tisch liegen. Das Spiel bleibt bewusst bei diesem einen dunklen Look (`color-scheme: dark`).
+Lunaris sieht aus, als wäre es in den Siebzigern erschienen: eine Spielschachtel mit Regenbogenstreifen, eine Konsole mit Holzfurnier und schwarzem Rippenplastik, ein Spieltisch aus braunem Cord und Karten aus Chamois-Karton. Hersteller und „Ausgabe 1976“ sind erfunden. Das Spiel bleibt bewusst bei diesem einen dunklen Look (`color-scheme: dark`).
 
 ### Farbpalette
 
-- **Druckplatte** `#1d3b6a` – Spieltisch
-- **Plattentinte** `#0e2142` – Joker-Platten, dunkle Mondflächen
-- **Kreide** `#e3e9ee` – Text und Linien auf der Platte
-- **Papier** `#efede4` – Spielkarten, Tickets, Quittung, Tooltips
-- **Tinte** `#17233a` – Text auf Papier
-- **Mondlicht** `#f2dc8c` – beleuchtete Karten, aktuelle Mondphase, Hauptaktion
+- **Kakao** `#2c1a10` – Spieltisch (Cord)
+- **Nussholz** `#5e341a` – Seitenleiste (Furnier)
+- **Chamois** `#f4e6c8` – Karten, Tickets, Tooltips und helle Schrift
+- **Tinte** `#3a2215` – Schrift auf Karton
+- **Senfgelb** `#f2b52b` – beleuchtete Karten, aktuelle Mondphase, Hauptaktion
+- **Orange** `#f0782a` – Mult, Abwerfen, Bosse
+- **Petrol** `#187172` – Chips
+- **Avocado** `#a2b13a` – Geld und Kaufen
 
-- **Riso-Neonpink** `#ff48b0` – Mult, Abwerfen, Bosse und der versetzte Überdruck
-
-Weitere Bedeutungsfarben: **Messing** `#d6a93f` für Geld, **Chips-Blau** `#2a5d9a` für Chips. Pink als Schrift auf Papier ist dunkler (`--fluo-ink` `#b0136b`), Schrift auf Pink ist immer Tinte. Rot (`--blood`) gibt es nur noch für den Blutmond.
+Die Siebziger-Streifen laufen von hell nach dunkel: `#f2b52b`, `#f08b1f`, `#e05a1a`, `#a83a18`, `#5e2814` (`--st1` … `--st5`). Schrift in Akzentfarben auf Karton nutzt dunklere Varianten (`--orange-ink`, `--teal-ink`, `--avocado-ink`), Geld auf Holz eine hellere (`--avocado-lt`). Rot (`--blood`) gibt es nur für den Blutmond.
 
 ### Schrift
 
-- **Display (Logo, Überschriften, Kartenränge, Punktzahlen):** Shrikhand, eine fette 70er-Funk-Schrift, nur ab 18 px und nur in ihrem einen Schnitt
-- **Text, Zahlen, Buttons, kleine Beschriftungen:** Alegreya Sans mit Tabellenziffern, Buttons in 800
+- **Display (Logo, Überschriften, Kartenränge, große Punktzahlen):** Shrikhand, im Stil der Cooper Black, nur ab 18 px
+- **Groovy (Buttons, Zahlen, Labels, Anzeigen):** Righteous, die runde Techno-Schrift der Spielautomaten
+- **Fließtext:** Alegreya Sans
 
 ## Tokens
 
@@ -30,54 +31,62 @@ Weitere Bedeutungsfarben: **Messing** `#d6a93f` für Geld, **Chips-Blau** `#2a5d
 |---|---|---|
 | Schriftgrößen (klassische Skala) | `--t-1` … `--t-9` | 12, 14, 16, 18, 21, 24, 30, 36, 48 px; Logo `--t-logo` |
 | Abstände | `--sp-1` … `--sp-8` | 4, 8, 12, 16, 24, 32, 48, 64 px |
-| Ecken | `--r-slip` / `--r-ui` / `--r-card` | 2 px Zettel, 4 px Bedienelemente und Platten, 6 px Spielkarten |
-| Schatten | `--shadow-obj` / `--shadow-slip` | harter Versatz ohne Unschärfe: Dinge liegen auf dem Tisch, Zettel obenauf |
-| Bewegung | `--dur-quick`, `--dur-orbit`, `--ease-orbit`, `--ease-boing` | 0,12 s für Rückmeldungen, 0,8 s für die Mond-Umlaufbahn, federnder Überschwinger für Joker, Karten und Stempel |
-| Überdruck | `--misreg`, `--misreg-sm` | versetzte Pink-Kopie (3 px / 2 px) für Display-Text |
-| Kontext | `--fg`, `--fg-dim`, `--rule` | auf der Platte hell, in Papier-Containern automatisch dunkel |
+| Ecken | `--r-slip` / `--r-card` / `--r-ui` / `--r-pill` | 6 px Zettel, 10 px Karten, 12 px Ablagen, Pillenform für Buttons und Plaketten |
+| Schatten | `--shadow-obj` / `--shadow-slip` | harter Versatz ohne Unschärfe |
+| Streifenschatten | `--stack-lg` / `--stack-md` / `--stack-sm` | gestaffelte Kopien in den Streifenfarben hinter Display-Schrift |
+| Texturen | `--tex-grain`, `--tex-wood`, `--tex-cord`, `--tex-rib`, `--stripes-h` | Korn, Holzmaserung, Cordrippen, Rippenplastik, Streifenband |
+| Bewegung | `--dur-quick`, `--dur-orbit`, `--ease-orbit`, `--ease-boing` | 0,12 s Rückmeldung, 0,8 s Umlaufbahn, federnder Überschwinger |
+| Kontext | `--fg`, `--fg-dim`, `--rule` | auf Tisch und Holz hell, in Karton-Containern automatisch dunkel |
 
-Papier-Container (`.ticket`, `.receipt`, `.modal-box`, `.end-box`, `#tooltip`, `.toast-item`) setzen die Kontext-Tokens um. Komponenten darin brauchen deshalb keine eigenen Farbvarianten.
+Karton-Container (`.ticket`, `.receipt`, `.modal-box`, `.end-box`, `#tooltip`, `.toast-item`) setzen die Kontext-Tokens um. Komponenten darin brauchen keine eigenen Farbvarianten.
 
 ## Komponenten
 
+### Schachteldeckel (Titel)
+
+Logo mit gestaffeltem Streifenschatten und tanzenden Buchstaben, Untertitel, Plaketten wie auf einer Spielschachtel („1 Spieler“, „ab 10 Jahren“, „ca. 30 Min.“), ein Streifen-Schwung von unten rechts und die Spielvarianten in einer Rippenplastik-Ablage.
+
 ### Button `.btn`
+
+Pillenform mit dickem Versatzschatten, Schrift Righteous.
 
 | Variante | Einsatz |
 |---|---|
-| `.btn-primary` (Mondlicht) | die eine Hauptaktion eines Bildschirms: Hand spielen, Blinde spielen, Neuer Lauf |
-| `.btn-danger` (Zinnober) | Abwerfen, Verkaufen, Lauf aufgeben |
-| `.btn-buy` (Messing) | alles, was Geld kostet oder bringt |
+| `.btn-primary` (Senf) | die eine Hauptaktion eines Bildschirms |
+| `.btn-danger` (Orange) | Abwerfen, Verkaufen, Lauf aufgeben |
+| `.btn-buy` (Avocado) | alles, was Geld kostet |
 | `.btn-quiet` (Kontur) | Nebenaktionen; `.on` markiert den aktiven Umschalter |
 
-Größen: `.btn-tiny` (36 px, auf Touch 44 px), `.btn-small` (40 px), Standard (44 px), `.big` (52 px).
-Zustände: gedrückt (2 px nach unten, Schatten schrumpft), deaktiviert (nur Kontur, gedämpfte Schrift), `.blocked` (sichtbar, erklärt beim Klick, warum es nicht geht).
+Größen: `.btn-tiny` (36 px, auf Touch 44 px), `.btn-small` (40 px), Standard (44 px), `.big` (52 px). Zustände: angehoben beim Überfahren, gedrückt, deaktiviert (nur Kontur), `.blocked` (erklärt beim Klick, warum es nicht geht).
+
+### Konsole (Seitenleiste)
+
+Holzfurnier mit Streifenband unter dem Logo. Die Punkte stehen in einem schwarzen Anzeigefenster mit orangen Ziffern, der Fortschritt als Streifen-Balken. Chips stehen auf Petrol, Mult auf Orange.
 
 ### Spielkarte `.card`
 
-- Die Hand ist aufgefächert (`--r`, `--dy` je Karte); ausgewählte Karten springen hoch und richten sich halb auf. Gespielte Karten landen leicht schief (`--tilt`, für jede Karte gleich).
-- Zahlenkarten zeigen die klassische Anordnung der Farbsymbole, Bildkarten einen kursiven Buchstaben (B, D, K), Asse ein großes Symbol.
-- Verbesserungen färben das Papier und tragen oben ein Etikett (`.enh-tag`).
-- Zustände: `.selected` (angehoben), `.lit` (Mondlicht-Rand), `.debuff` (grau mit Zinnober-Strich), `.back` (Rückseite, je Deck eigenes Muster), `.mini` (Deckübersicht).
-- Handkarten sind `<button aria-pressed>`, Karten auf dem Tisch reine Bilder.
+- Chamois-Karton mit runden Ecken; Zahlenkarten zeigen die klassische Anordnung der Farbsymbole, Bildkarten einen großen Buchstaben mit Senf-Schatten.
+- Die Hand ist aufgefächert (`--r`, `--dy`); ausgewählte Karten springen hoch. Gespielte Karten landen schief (`--tilt`).
+- Rückseiten sind Op-Art: Ringe, Diagonalstreifen, Wellen, Schachbrett, Punkte, Sonne halb und halb, je nach Deck.
+- Zustände: `.selected`, `.lit` (Senf-Rand), `.debuff` (grau mit Orange-Strich), `.back`, `.mini`.
 
 ### Platte `.joker`, `.cons`, `.pack`
 
-Linienzeichnung (`js/art.js`) plus Name. Seltenheit zeigt sich doppelt: am Rahmen (einfach, doppelt, doppelt mit Mondlicht) und an der Farbe des versetzten Überdrucks der Grafik (Blau, Mondlicht, Pink). Platten kippen mit dem Mauszeiger leicht in 3D und federn beim Auswählen. Editionen sind statische Muster (Folie schraffiert, Holo Farbstreifen unten, Polychrom Streifen), keine Animation.
-Arkana tragen ihre echte Tarot-Nummer, Sternbilder eine Sternkarte, Packs eine Umschlagklappe.
+Joker sind braune Platten mit Linienzeichnung (`js/art.js`) und einem Streifenband unten: Petrol für gewöhnliche, zwei Streifen für ungewöhnliche, alle fünf für seltene. Die Grafik ist versetzt in derselben Logik überdruckt. Platten kippen mit dem Mauszeiger und federn beim Auswählen. Arkana tragen ihre Tarot-Nummer, Sternbilder eine Sternkarte auf Petrol, Mondsteine liegen auf Senf, Packs haben eine Streifenkante.
 
-### Zettel
+### Zettel und Tickets
 
-Tooltip, Hinweis (Toast), Quittung (gezackter Abriss, gepunktete Führungslinien, leicht schief), Ticket (gestanzte Seitenränder, verstreut gedreht, Stempel „Besiegt“). Alle aus Papier mit hartem Versatzschatten. Preise im Shop kleben als runde Messing-Sticker an der Ware. Wertungen erscheinen als Stempel mit zufälliger Neigung.
+Tooltip, Hinweis (Pille), Kassenzettel und Tickets aus Karton mit Streifenkante oben. Tickets liegen verstreut und gedreht, besiegte bekommen einen Stempel. Preise kleben als Sternplaketten an der Ware. Wertungen erscheinen als Pillen, ×Mult als Sternplakette, große Hände zusätzlich als Zeitgeist-Stempel („Klasse!“, „Spitze!“, „Dufte!“, „Irre!“).
 
 ### Mond-Umlaufbahn `.orbit`
 
-Die lauteste Stelle des Designs. Fünf Phasen liegen auf einer Ellipse, die aktuelle steht vorn im gestrichelten Mondlicht-Ring vor einem Strahlenkranz, die nächste rechts daneben. Dunkle Mondseiten sind gerastert (`#raster` aus `js/art.js`). Bei Vollmond färbt sich der Strahlenkranz gelb und dreht sich langsam. Nach jeder Hand dreht sich die Bahn um eine Phase (`--dur-orbit`). Darunter steht in einem Satz, welche Farbe beleuchtet ist und was danach kommt.
+Fünf Phasen auf einer Ellipse, die aktuelle steht vorn im gepunkteten Ring vor einem Strahlenkranz aus Senf und Orange. Dunkle Mondseiten sind mit orangen Punkten gerastert (`#raster`). Bei Vollmond wird der Strahlenkranz zum Regenbogen und dreht sich langsam.
 
 ## Regeln
 
-- Mondlicht-Gelb bedeutet immer „beleuchtet“ oder „jetzt dran“, nie Dekoration.
-- Keine Emoji, keine Verläufe als Schmuck, kein Glühen, keine Unschärfe-Schatten. Funk entsteht aus Druck-Effekten (Überdruck, Raster, Strahlen) und aus Dingen, die schief liegen.
+- Senfgelb bedeutet immer „beleuchtet“ oder „jetzt dran“.
+- Keine Emoji, kein Glühen, keine Unschärfe-Schatten. Der Siebziger-Funk entsteht aus Streifen, Materialien (Holz, Cord, Rippenplastik, Karton), runden Formen und Dingen, die schief liegen.
 - Versalien und Sperrsatz für Beschriftungen vermeiden; Labels in normaler Schreibweise.
-- Begriffe einheitlich: „beleuchtet“ (nicht „leuchtend“), „Blinde“, „Vorrat“ für Verbrauchskarten.
-- Kontraste mindestens WCAG AA (geprüft: Kreide/Platte 9,1:1, Tinte/Papier 13,4:1, Tinte/Neonpink 5,1:1, Pinkschrift/Papier 5,7:1, Mondlicht/Platte 8,2:1, Karo/Papier 5,1:1).
+- Begriffe einheitlich: „beleuchtet“, „Blinde“, „Vorrat“.
+- Kontraste mindestens WCAG AA (geprüft u. a.: Chamois/Tisch 13,5:1, Tinte/Karton 12:1, Tinte/Orange 5,2:1, Chamois/Petrol 4,7:1, Geld/Holz 6:1, Herz/Karton 5,3:1).
 - Bewegung antwortet auf Aktionen; einzige Daueranimation ist der Strahlenkranz bei Vollmond. `prefers-reduced-motion` schaltet Umlaufbahn, Federn, Kippen und Strahlenkranz ab.

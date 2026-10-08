@@ -11,7 +11,7 @@
   // Gemeinsame SVG-Muster: Rasterpunkte für die dunkle Mondseite (Risodruck)
   A.DEFS = `<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
     <pattern id="raster" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
-      <rect width="7" height="7" style="fill:var(--plate-ink)"/><circle cx="3.5" cy="3.5" r="1.5" style="fill:var(--chalk);fill-opacity:.2"/>
+      <rect width="7" height="7" style="fill:var(--table-ink)"/><circle cx="3.5" cy="3.5" r="1.6" style="fill:var(--orange);fill-opacity:.35"/>
     </pattern></defs></svg>`;
 
   // ---------- Mond ----------

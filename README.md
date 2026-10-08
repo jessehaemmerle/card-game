@@ -42,7 +42,7 @@ Rund um den Zyklus gibt es:
 
 ## Gestaltung
 
-Die Optik verbindet **Cyanotypien**, die preußischblauen Lichtdrucke, mit denen im 19. Jahrhundert auch der Mond fotografiert wurde, mit dem Funk eines **70er-Planetariumsplakats im Risodruck**: körnige blaue Druckplatte, Neonpink leicht versetzt überdruckt, Rasterpunkte und ein Strahlenkranz. Spielkarten mit klassischen Kartenbildern liegen als aufgefächerte Hand auf dem Tisch, Tickets und Quittung schief daneben, Preise kleben als Sticker. Joker sind Linienzeichnungen (SVG, kein Emoji), die mit dem Mauszeiger kippen; Sternbilder sind echte Sternkarten, Arkana tragen ihre Tarot-Nummern. Blickfang ist die Mond-Umlaufbahn über dem Tisch, die sich nach jeder Hand um eine Phase dreht. Schriften: *Shrikhand* und *Alegreya Sans*.
+Lunaris sieht aus, als wäre es **1976** erschienen: Der Titel ist ein Schachteldeckel mit Regenbogenstreifen und Plaketten („1 Spieler“, „ab 10 Jahren“), die Seitenleiste ist Holzfurnier wie an einer Spielkonsole, Joker und Vorrat liegen in schwarzem Rippenplastik, gespielt wird auf braunem Cord. Senfgelb, Orange, Petrol und Avocado, gestaffelte Streifenschatten hinter der Schrift, Pillen-Buttons, Op-Art-Kartenrücken, Preise als Sternplaketten und Zeitgeist-Stempel wie „Dufte!“ nach starken Händen. Spielkarten zeigen klassische Kartenbilder, Joker sind Linienzeichnungen (SVG, kein Emoji). Blickfang ist die Mond-Umlaufbahn vor einem Strahlenkranz, der bei Vollmond zum Regenbogen wird. Schriften: *Shrikhand*, *Righteous* und *Alegreya Sans*. Hersteller und Ausgabe sind erfunden.
 
 Tokens (Farben, klassische Schriftgrößenskala, Abstände, Ecken, Schatten, Bewegung) und Komponenten sind in [`docs/DESIGN.md`](docs/DESIGN.md) beschrieben.
 
