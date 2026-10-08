@@ -29,6 +29,8 @@
       consSlots: 2,
       moon: 0,
       mondkraft: 2,
+      groove: 0,
+      fever: 0,
       cards: {},
       jokers: [],
       consumables: [],
@@ -42,7 +44,7 @@
       notices: [],
       endless: false,
       won: false,
-      stats: { handsPlayed: 0, bestHand: 0, bestHandType: null, arkanaUsed: 0, roundsWon: 0, discards: 0, cardsPlayed: 0, moneyEarned: 0 },
+      stats: { handsPlayed: 0, bestHand: 0, bestHandType: null, arkanaUsed: 0, roundsWon: 0, discards: 0, cardsPlayed: 0, moneyEarned: 0, fevers: 0 },
     };
     D.HAND_ORDER.forEach((h) => (s.handLevels[h] = { level: 1, played: 0 }));
 
@@ -297,14 +299,15 @@
     }
 
     G.advanceMoon(s, boss && boss.moonStep != null ? boss.moonStep : 1);
+    const feverStart = G.updateGroove(s, res);
 
     if (r.score >= r.target) {
       G.endRound(s);
-      return { won: true };
+      return { won: true, feverStart };
     }
     if (r.handsLeft <= 0) {
       s.phase = 'gameover';
-      return { lost: true };
+      return { lost: true, feverStart };
     }
     if (boss === D.BOSSES.haken && r.hand.length) {
       for (let i = 0; i < 2 && r.hand.length; i++) {
@@ -315,7 +318,22 @@
       G.notice(s, 'Der Haken: 2 Karten abgeworfen');
     }
     G.draw(s);
-    return {};
+    return { feverStart };
+  };
+
+  // Groove-O-Meter: liefert true, wenn gerade das Disco-Fieber ausbricht
+  G.updateGroove = function (s, res) {
+    if (res.feverUsed) {
+      s.fever = Math.max(0, (s.fever || 0) - 1);
+      return false;
+    }
+    const pts = D.groovePoints(res.total / s.round.target);
+    s.groove = pts ? Math.min(D.GROOVE_MAX, (s.groove || 0) + pts) : 0;
+    if (s.groove < D.GROOVE_MAX) return false;
+    s.groove = 0;
+    s.fever = D.FEVER_HANDS;
+    s.stats.fevers = (s.stats.fevers || 0) + 1;
+    return true;
   };
 
   G.discard = function (s) {

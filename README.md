@@ -32,13 +32,23 @@ Rund um den Zyklus gibt es:
 - **Mond-Joker** wie *Werwolf* (×3 Mult bei Vollmond), *Polarstern* (die nächste Phase leuchtet mit), *Spiegelsee* (beleuchtete Karten zählen doppelt), *Mondkönig* (wächst mit jeder beleuchteten Karte) oder *Gezeitenwächter* (Abwürfe bewegen den Mond).
 - **Mond-Bosse**: *Der Mondfresser* schwächt beleuchtete Karten, *Die Finsternis* löscht das Licht, *Der Gezeitensturm* lässt den Mond springen, und im Finale zählt beim *Blutmond* nur noch, was leuchtet.
 
+## Disco-Fieber
+
+Starke Hände füllen das **Groove-O-Meter** auf dem Spielfeld (ab 15 % des Ziels 1 Punkt, ab 35 % 2, ab 60 % 3), eine schwache Hand leert es wieder. Bei 6 Punkten bricht das **Disco-Fieber** aus: Die nächsten 2 Hände bekommen **×2 Mult**, der Spieltisch wird zur leuchtenden Tanzfläche, und alles wippt im Takt.
+
+Dazu läuft ein **prozedural erzeugter Funk-Soundtrack** (Bass, Schlagzeug, im Fieber Wah-Gitarre und Disco-Streicher), der schneller wird, je näher du dem Ziel kommst. Musik und Sound lassen sich getrennt abschalten.
+
+## Aufnäher
+
+17 Erfolge landen als gestickte **Aufnäher auf deiner Jeansjacke**, zum Beispiel „Saturday Night“ (10.000 Punkte mit einer Hand), „Mondlandung“ (einen Mondstein benutzen) oder „Der Mond gehört dir“ (einen Lauf gewinnen). Sie bleiben über alle Läufe hinweg erhalten und lassen sich im Titelbildschirm und in der Seitenleiste ansehen.
+
 ## Inhalt
 
 - 12 Pokerhände (inkl. versteckter Hände wie Fünfling und Flush Five) mit Level-System
 - 41 Joker in drei Seltenheiten, mit Editionen (Folie, Holo, Polychrom)
 - 19 Arkana, 12 Sternbilder, 4 Mondsteine, 5 Booster-Packs
 - 8 Kartenverbesserungen, 21 Boss-Blinden, 6 Start-Decks
-- Seeds für reproduzierbare Läufe, Spieltempo- und Sound-Optionen
+- Seeds für reproduzierbare Läufe, Optionen für Spieltempo, Effekte, Sound, Musik und Röhrenfernseher
 
 ## Gestaltung
 
@@ -46,11 +56,20 @@ Lunaris sieht aus, als wäre es **1976** erschienen: Der Titel ist ein Schachtel
 
 Dazu kommen **übertriebene Animationen**: Karten wirbeln beim Austeilen herein und knallen beim Spielen auf den Tisch, Konfetti, Sterne und Münzen fliegen, der Bildschirm wackelt bei großen Treffern, die Gesamtpunktzahl erscheint riesig in der Bildmitte, Bildschirmwechsel laufen über eine Regenbogen-Wischblende, beim Rundensieg senkt sich eine Disco-Kugel, und bei Game Over fällt alles vom Tisch. In den Optionen lässt sich „Effekte: ruhig“ wählen; bei der Systemeinstellung „Bewegung reduzieren“ ist das automatisch aktiv.
 
+Die großen Momente bekommen eigene Auftritte:
+
+- **Zeitlupe beim Siegtreffer:** Die Wertung, die das Ziel knackt, läuft in Zeitlupe mit Kamerafahrt, Herzschlag und Explosion. Die Chips- und Mult-Zähler brennen, und das Anzeigefenster füllt sich wie eine Lavalampe, bis es beim Ziel überläuft.
+- **Boss-Intros:** Vor jeder Boss-Blinde wird es dunkel, es donnert, und ein Filmplakat knallt herein („Die Klammer – Diesen Sommer im Kino“).
+- **Mondlandung:** Wer einen Mondstein benutzt, sieht eine Mondfähre auf dem aktuellen Mond landen, mit Triebwerksflamme, Staubwolke, Quindar-Pieptönen und Fahne.
+- **Joker mit Gesichtern:** Wackelaugen folgen dem Mauszeiger, Joker jubeln beim Auslösen, kommentieren in Sprechblasen („Groovy!“, „Knorke!“, beim Werwolf „Auuuu!“) und schauen traurig, wenn der Lauf endet.
+- **Röhrenfernseher:** Zeilenraster, Farbsäume, Bildstörungen bei großen Treffern und ein Abschalten wie beim alten Fernseher, wenn der Lauf vorbei ist.
+- **Psychedelische Spirale:** Hinter dem Spielfeld dreht sich eine Spirale in den Streifenfarben, umso schneller, je voller der Groove ist. Im Disco-Fieber wechselt sie im Takt die Farben.
+
 Tokens (Farben, klassische Schriftgrößenskala, Abstände, Ecken, Schatten, Bewegung) und Komponenten sind in [`docs/DESIGN.md`](docs/DESIGN.md) beschrieben.
 
-Barrierefreiheit: alle Bedienelemente sind echte Buttons mit sichtbarem Tastaturfokus, Farbkontraste erfüllen WCAG AA, Dialoge halten den Fokus, Wertungen werden für Screenreader angesagt und `prefers-reduced-motion` wird respektiert.
+Barrierefreiheit: alle Bedienelemente sind echte Buttons mit sichtbarem Tastaturfokus, Farbkontraste erfüllen WCAG AA, Dialoge halten den Fokus, Wertungen und neue Aufnäher werden für Screenreader angesagt und `prefers-reduced-motion` wird respektiert. Farbblitze sind auf höchstens drei pro Sekunde begrenzt, die Tanzfläche schaltet immer nur ein Viertel der Fliesen um, und „Effekte: ruhig“ stellt Partikel, Wackeln, Sprechblasen, Spirale und Takt-Bewegung ab.
 
-**Tastatur:** `1`–`9` Karten wählen · `Enter` Hand spielen · `D` abwerfen · `S` Sortierung wechseln · `Esc` schließen.
+**Tastatur:** `1`–`9` Karten wählen · `Enter` Hand spielen · `D` abwerfen · `S` Sortierung wechseln · `Esc` schließen (auch das Boss-Plakat).
 
 ## Projektstruktur
 
@@ -65,7 +84,9 @@ js/consumables.js   Arkana, Sternbilder, Mondsteine, Packs
 js/art.js           Linienzeichnungen (SVG) für Joker, Bosse und Verbrauchskarten
 js/game.js          Spielablauf (Runden, Shop, Packs)
 js/audio.js         Synthetische Soundeffekte (WebAudio)
-js/fx.js            Übertriebene Effekte: Partikel, Wackeln, Wischblende, Disco-Kugel
+js/music.js         Prozeduraler Funk-Soundtrack mit Taktgeber
+js/patches.js       Aufnäher (Erfolge) und ihre Bedingungen
+js/fx.js            Übertriebene Effekte: Partikel, Wackeln, Wischblende, Disco-Kugel, Flammen, Zeitlupe, Bildstörung
 js/ui.js            Darstellung, Animationen, Eingaben, Speichern
 tests/logic.test.js Logiktests + Bot-Simulation (node tests/logic.test.js)
 docs/DESIGN.md      Designsystem: Tokens, Komponenten, Regeln

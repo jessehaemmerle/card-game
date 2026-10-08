@@ -14,6 +14,39 @@
     return ctx;
   }
 
+  A.ctx = ac;
+
+  // Weißes Rauschen (einmal erzeugt) für Donner, Raketen und Schlagzeug
+  let noiseBuf = null;
+  A.noiseBuffer = function (c) {
+    if (!noiseBuf) {
+      noiseBuf = c.createBuffer(1, c.sampleRate, c.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return noiseBuf;
+  };
+
+  function noise(dur, vol, delay, freq, type, slideTo) {
+    const c = ac();
+    if (!c) return;
+    const t = c.currentTime + (delay || 0);
+    const src = c.createBufferSource();
+    src.buffer = A.noiseBuffer(c);
+    src.loop = true;
+    const f = c.createBiquadFilter();
+    f.type = type || 'lowpass';
+    f.frequency.setValueAtTime(freq || 800, t);
+    if (slideTo) f.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.2, t + Math.min(0.05, dur / 4));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(t);
+    src.stop(t + dur + 0.05);
+  }
+
   function tone(freq, dur, type, vol, delay, slideTo) {
     const c = ac();
     if (!c) return;
@@ -61,6 +94,15 @@
         case 'howl': tone(300, 0.5, 'sine', 0.09, 0, 700); tone(700, 0.7, 'sine', 0.08, 0.45, 420); break;
         case 'kaching': tone(1568, 0.08, 'square', 0.05); tone(2093, 0.25, 'triangle', 0.06, 0.07); break;
         case 'pop': tone(500 * p, 0.06, 'square', 0.05, 0, 900 * p); break;
+        case 'fever': tone(220, 0.4, 'sawtooth', 0.06, 0, 880); tone(330, 0.4, 'square', 0.04, 0.08, 1320); tone(1320, 0.3, 'triangle', 0.05, 0.4); break;
+        case 'heart': tone(62, 0.13, 'sine', 0.3); tone(55, 0.16, 'sine', 0.24, 0.19); break;
+        case 'boom': noise(1.1, 0.35, 0, 1800, 'lowpass', 60); tone(80, 0.8, 'sine', 0.3, 0, 30); break;
+        case 'thunder': noise(0.25, 0.4, 0, 4000, 'lowpass', 900); noise(2.4, 0.32, 0.15, 500, 'lowpass', 70); break;
+        case 'rocket': noise(1.8, 0.12, 0, 300, 'lowpass', 120); break;
+        case 'thud': tone(90, 0.2, 'sine', 0.2, 0, 40); noise(0.4, 0.15, 0, 900, 'lowpass', 200); break;
+        case 'quindar': tone(2525, 0.25, 'sine', 0.05); tone(2475, 0.25, 'sine', 0.05, 0.6); break;
+        case 'patch': [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.18, 'square', 0.045, i * 0.07)); tone(1047, 0.5, 'triangle', 0.07, 0.4); break;
+        case 'tvoff': tone(1600, 0.35, 'sine', 0.05, 0, 90); noise(0.15, 0.1, 0, 6000, 'highpass'); break;
         default: break;
       }
     } catch (e) { /* Audio ist optional */ }

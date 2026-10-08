@@ -24,7 +24,7 @@
   let playView = null; // Karten auf dem Tisch während der Wertung
   let lastMoon = null; // für die Animation der Mondbahn
   let titleDeck = 'nacht';
-  let settings = { speed: 1, sound: true, fx: 'wild' };
+  let settings = { speed: 1, sound: true, fx: 'wild', music: true, crt: true };
   // Für die Auftritts-Animationen: was war beim letzten Rendern schon da?
   let lastHand = new Set();
   let lastJokers = null;
@@ -32,6 +32,9 @@
   let lastPhase = null;
   const tips = new Map();
   let tipSeq = 0;
+  let posterDone = null; // beendet das Boss-Plakat
+  const patchQueue = []; // neue Aufnäher, die noch eingeblendet werden
+  let patchShowing = false;
 
   const $ = (q, el) => (el || document).querySelector(q);
   const $$ = (q, el) => Array.from((el || document).querySelectorAll(q));
@@ -59,7 +62,7 @@
     else store.set(SAVE_KEY, S);
   }
   function profile() {
-    return Object.assign({ runs: 0, wins: 0, bestAnte: 0, bestHand: 0 }, store.get(PROFILE_KEY) || {});
+    return Object.assign({ runs: 0, wins: 0, bestAnte: 0, bestHand: 0, patches: [] }, store.get(PROFILE_KEY) || {});
   }
   function recordEnd(won) {
     if (!S || S.recorded) return;
@@ -138,6 +141,9 @@
     return h;
   }
 
+  // Wackelaugen und Mund: Joker schauen dem Zeiger nach, jubeln und trauern
+  const FACE = '<span class="jface" aria-hidden="true"><span class="eye"><i></i></span><span class="eye"><i></i></span><span class="mouth"></span></span>';
+
   function jokerHTML(j, o) {
     o = o || {};
     const d = L.jokers[j.id];
@@ -145,7 +151,7 @@
     const btn = o.act ? ` type="button" data-act="${o.act}" aria-expanded="${o.selected ? 'true' : 'false'}"` : '';
     const ed = j.edition ? `<span class="ed-tag">${D.EDITIONS[j.edition].name}</span>` : '';
     return `<${tag} class="joker r${d.rarity} ${j.edition ? 'ed-' + j.edition : ''} ${o.selected ? 'selected' : ''}" data-uid="${esc(j.uid || '')}" data-tip="${tip(jokerTip(j, o.owned))}" aria-label="Joker ${esc(d.name)}"${btn}>
-      <span class="plate-art">${A.joker(j.id)}</span><span class="plate-name">${esc(d.name)}</span>${ed}</${tag}>`;
+      <span class="plate-art">${A.joker(j.id)}</span>${FACE}<span class="plate-name">${esc(d.name)}</span>${ed}</${tag}>`;
   }
 
   function consTip(item, owned) {
@@ -222,6 +228,44 @@
     </section>`;
   }
 
+  // ---------- Disco-Fieber: Groove-O-Meter, Tanzfläche, Spirale ----------
+  const SPIRAL = A.spiral();
+  const GROOVE_TIP = `<div class="tt-title">Groove-O-Meter</div><div class="tt-body">Starke Hände füllen das Meter: ab 15 % des Ziels 1 Punkt, ab 35 % 2, ab 60 % 3. Eine schwache Hand leert es wieder.</div><div class="tt-note">Bei ${D.GROOVE_MAX} Punkten bricht das Disco-Fieber aus: ${D.FEVER_HANDS} Hände lang ×${D.FEVER_MULT} Mult.</div>`;
+  const handsWord = (n) => `${n} ${n === 1 ? 'Hand' : 'Hände'}`;
+
+  function grooveInner() {
+    const g = S.groove || 0;
+    const leds = Array.from({ length: D.GROOVE_MAX }, (_, i) => `<i class="${S.fever > 0 || i < g ? 'on' : ''}"></i>`).join('');
+    const state = S.fever > 0
+      ? `<b>Disco-Fieber!</b> ×${D.FEVER_MULT} Mult, noch ${handsWord(S.fever)}`
+      : g ? 'Weiter so, der Groove steigt' : 'Starke Hände füllen den Groove';
+    return `<span class="groove-label">Groove-O-Meter</span><span class="groove-leds">${leds}</span><span class="groove-state">${state}</span>`;
+  }
+  const grooveLabel = () => (S.fever > 0
+    ? `Disco-Fieber: ×${D.FEVER_MULT} Mult für noch ${handsWord(S.fever)}`
+    : `Groove-O-Meter: ${S.groove || 0} von ${D.GROOVE_MAX}`);
+  const grooveHTML = () => `<div class="groove ${S.fever > 0 ? 'fever' : ''}" id="groove" role="img" tabindex="0" aria-label="${grooveLabel()}" data-tip="${tip(GROOVE_TIP)}">${grooveInner()}</div>`;
+
+  // Die Tanzfläche leuchtet im Disco-Fieber im Takt (immer nur ein Viertel der Fliesen, kein Flackern)
+  function floorHTML() {
+    let t = '';
+    for (let r = 0; r < 5; r++) for (let c = 0; c < 8; c++) t += `<i class="d${(r + c) % 4} k${(r * 2 + c) % 5}"></i>`;
+    return `<div class="floor" data-b="0">${t}</div>`;
+  }
+
+  // Groove-Anzeige und Tanzfläche aktualisieren, ohne alles neu zu zeichnen
+  function refreshGroove() {
+    const g = $('#groove');
+    if (g) {
+      setHTML(g, grooveInner());
+      g.classList.toggle('fever', S.fever > 0);
+      g.setAttribute('aria-label', grooveLabel());
+    }
+    const run = $('.run');
+    if (run) run.classList.toggle('fever', S.fever > 0);
+    syncMusic();
+  }
+
   // ---------- Titelbildschirm ----------
   function deckBack(id) {
     return `<span class="card back deck-${id}"><span class="back-in"></span></span>`;
@@ -254,6 +298,7 @@
             ${has ? '<button type="button" class="btn btn-primary big" data-act="continue">Lauf fortsetzen</button>' : ''}
             <button type="button" class="btn ${has ? 'btn-quiet' : 'btn-primary'} big" data-act="new-run">Neuer Lauf</button>
             <button type="button" class="btn btn-quiet big" data-act="help">Anleitung</button>
+            <button type="button" class="btn btn-quiet big" data-act="show-jacket">Jeansjacke</button>
           </div>
           <p class="record">${record}</p>
         </div>
@@ -298,10 +343,12 @@
     const inRound = r && (S.phase === 'round' || S.phase === 'cashout' || S.phase === 'gameover');
     const pct = inRound ? Math.min(100, (r.score / r.target) * 100) : 0;
     const roundNo = S.stats.roundsWon + (S.phase === 'round' || S.phase === 'blind' ? 1 : 0);
-    const scoring = inRound ? `<div class="led-score">
+    const scoring = inRound ? `<div class="led-score ${r.score >= r.target ? 'overflow' : ''}" id="led-score">
+        <span class="lava" aria-hidden="true" style="--fill:${pct.toFixed(1)}%"><i></i><i></i><i></i><i></i></span>
         <span class="led-label">Punkte</span>
         <span class="led-big" id="round-score">${fmt(r.score)}</span>
         <span class="led-bar"><span style="width:${pct}%"></span></span>
+        <span class="drips" aria-hidden="true"><i></i><i></i><i></i></span>
       </div>
       ${S.phase === 'round' ? `<div class="hand-panel ${p || busy ? '' : 'idle'}" id="hand-panel" aria-live="polite">
         <div class="hp-name" id="hp-name">${p ? `${D.HANDS[p.type].name} <small>Level ${p.level}</small>` : busy ? '' : '<span class="hp-empty">Wähle bis zu 5 Karten</span>'}</div>
@@ -323,6 +370,7 @@
       <div class="side-btns">
         <button type="button" class="btn btn-quiet btn-small" data-act="show-hands">Pokerhände</button>
         <button type="button" class="btn btn-quiet btn-small" data-act="show-deck">Deck</button>
+        <button type="button" class="btn btn-quiet btn-small" data-act="show-jacket">Aufnäher</button>
         <button type="button" class="btn btn-quiet btn-small" data-act="show-settings">Optionen</button>
       </div>
     </aside>`;
@@ -498,7 +546,7 @@
   function endOverlayHTML() {
     if (S.phase === 'gameover') {
       const r = S.round;
-      return `<div class="overlay"><div class="end-box lose" role="dialog" aria-modal="true" aria-labelledby="end-title">
+      return `<div class="overlay"><div class="end-box lose ${settings.crt ? 'tv-on' : ''}" role="dialog" aria-modal="true" aria-labelledby="end-title">
         <h2 id="end-title">Lauf beendet</h2>
         <p>${r ? `${esc(r.name)} hat dich in Ante ${S.ante} gestoppt: ${fmt(r.score)} von ${fmt(r.target)} Punkten.` : ''}</p>
         ${statsHTML()}
@@ -538,12 +586,26 @@
     }
   }
 
+  // ---------- Aufnäher ----------
+  function patchHTML(p) {
+    return `<span class="patch shape-${p.shape} c-${p.color}">${L.patches.motif(p)}<span class="patch-name">${esc(p.name)}</span></span>`;
+  }
+
+  function jacketHTML() {
+    const have = new Set(profile().patches);
+    const items = L.patches.LIST.map((p) => (have.has(p.id)
+      ? `<li class="sewn" style="--rot:${(L.hashSeed(p.id) % 13) - 6}deg">${patchHTML(p)}<span class="pl-hint">${esc(p.hint)}</span></li>`
+      : `<li class="locked"><span class="patch-slot" aria-hidden="true">?</span><span class="pl-name">Noch offen</span><span class="pl-hint">${esc(p.hint)}</span></li>`)).join('');
+    return `<p class="hint">${have.size} von ${L.patches.LIST.length} Aufnähern. Jeder Erfolg wird für immer auf deine Jacke genäht.</p><ul class="jacket">${items}</ul>`;
+  }
+
   // ---------- Modals ----------
   function modalHTML() {
     if (!modal) return '';
     let title = '';
     let body = '';
     if (modal === 'help') { title = 'Anleitung'; body = helpHTML(); }
+    if (modal === 'jacket') { title = 'Jeansjacke'; body = jacketHTML(); }
     if (modal === 'confirm' && pendingConfirm) {
       title = pendingConfirm.title;
       body = `<p class="confirm-text">${pendingConfirm.text}</p>
@@ -578,6 +640,8 @@
       body = `<div class="opt-row"><span>Spieltempo</span><div role="group" aria-label="Spieltempo">${[1, 2, 3, 4].map((v) => `<button type="button" class="btn btn-quiet btn-tiny ${settings.speed === v ? 'on' : ''}" data-act="speed" data-v="${v}" aria-pressed="${settings.speed === v}">${v}×</button>`).join('')}</div></div>
         <div class="opt-row"><span>Effekte</span><div role="group" aria-label="Effekte">${[['wild', 'Übertrieben'], ['calm', 'Ruhig']].map(([v, t]) => `<button type="button" class="btn btn-quiet btn-tiny ${settings.fx === v ? 'on' : ''}" data-act="fx" data-v="${v}" aria-pressed="${settings.fx === v}">${t}</button>`).join('')}</div></div>
         <div class="opt-row"><span>Sound</span><button type="button" class="btn btn-quiet btn-tiny ${settings.sound ? 'on' : ''}" data-act="toggle-sound" aria-pressed="${settings.sound}">${settings.sound ? 'An' : 'Aus'}</button></div>
+        <div class="opt-row"><span>Funk-Musik${settings.sound ? '' : ' <small>(braucht Sound)</small>'}</span><button type="button" class="btn btn-quiet btn-tiny ${settings.music ? 'on' : ''}" data-act="toggle-music" aria-pressed="${settings.music}">${settings.music ? 'An' : 'Aus'}</button></div>
+        <div class="opt-row"><span>Röhrenfernseher</span><button type="button" class="btn btn-quiet btn-tiny ${settings.crt ? 'on' : ''}" data-act="toggle-crt" aria-pressed="${settings.crt}">${settings.crt ? 'An' : 'Aus'}</button></div>
         ${S ? `<div class="opt-row"><span>Seed dieses Laufs</span><code>${esc(S.seed)}</code></div>
         <div class="opt-row"><span>Tastatur</span><span class="keys">1 bis 9 wählt Karten, Enter spielt, D wirft ab, S sortiert um, Esc schließt.</span></div>
         <div class="opt-btns"><button type="button" class="btn btn-quiet btn-small" data-act="help">Anleitung</button><button type="button" class="btn btn-quiet btn-small" data-act="menu">Zum Hauptmenü (Lauf bleibt gespeichert)</button><button type="button" class="btn btn-danger btn-small" data-act="abandon">Lauf aufgeben</button></div>` : ''}`;
@@ -599,6 +663,10 @@
       <p>Hebe deine stärkste Hand für den Vollmond auf. Mit Mondsteinen verschiebst du den Mond, Mondsilber-Karten sind immer beleuchtet, und Joker wie der Werwolf leben vom Zyklus. Manche Bosse löschen das Mondlicht oder verlangen es.</p>
       <h3>Shop</h3>
       <p>Nach jeder Blinde bekommst du Geld, dazu $1 Zinsen pro $5 Erspartem (höchstens $5). Im Shop gibt es Joker (höchstens 5, ihre Reihenfolge zählt), Arkana zum Verändern von Karten (erst Handkarten wählen, dann benutzen), Sternbilder zum Leveln von Pokerhänden und Mondsteine.</p>
+      <h3>Disco-Fieber</h3>
+      <p>Starke Hände füllen das Groove-O-Meter auf dem Spielfeld, eine schwache Hand leert es wieder. Ist es voll, bricht das Disco-Fieber aus: Die nächsten ${D.FEVER_HANDS} Hände bekommen ×${D.FEVER_MULT} Mult, und die Tanzfläche leuchtet im Takt.</p>
+      <h3>Aufnäher</h3>
+      <p>Besondere Leistungen bringen Aufnäher für deine Jeansjacke. Sie bleiben über alle Läufe hinweg erhalten.</p>
       <h3>Überspringen</h3>
       <p>Kleine und große Blinden kannst du überspringen. Du bekommst die angezeigte Belohnung, verzichtest aber auf Geld und Shop.</p>
     </div>`;
@@ -617,7 +685,9 @@
     } else {
       const skip = S.phase === 'round' ? '<a class="skip-link" href="#hand" data-act="skip-hand">Zu deinen Karten springen</a>' : '';
       const rack = S.round && (S.phase === 'round' || S.phase === 'gameover') ? rackHTML() : '';
-      setHTML($('#app'), `${skip}<div class="run phase-${S.phase} ${busy ? 'busy' : ''}">${sideHTML()}<div class="board">${topHTML()}<section class="field" aria-label="Spielfeld"><div class="field-bg" aria-hidden="true"></div>${moonTrackHTML()}<div class="center">${centerHTML()}</div></section>${rack}</div></div>${endOverlayHTML()}`);
+      const inRound = S.phase === 'round' || S.phase === 'gameover';
+      const bg = `<div class="field-bg" aria-hidden="true">${SPIRAL}${inRound ? floorHTML() : ''}</div>`;
+      setHTML($('#app'), `${skip}<div class="run phase-${S.phase} ${busy ? 'busy' : ''} ${S.fever > 0 ? 'fever' : ''}">${sideHTML()}<div class="board">${topHTML()}<section class="field" aria-label="Spielfeld">${bg}${inRound ? grooveHTML() : ''}${moonTrackHTML()}<div class="center">${centerHTML()}</div></section>${rack}</div></div>${endOverlayHTML()}`);
       animateMoon();
       entrances();
     }
@@ -625,6 +695,9 @@
     if (modal && !hadModal) { const b = $('#modal [data-act="close-modal"].btn'); if (b) b.focus(); }
     if (!modal && hadModal && modalReturn) { const el = $(modalReturn); if (el) el.focus(); modalReturn = null; }
     flushNotices();
+    syncMusic();
+    if (S && !busy) awardPatches('state');
+    updateEyes();
     if (!busy) save();
   };
 
@@ -687,7 +760,7 @@
       setTimeout(() => {
         const front = $('.mt-moon.now');
         const track = $('.moon-track');
-        if (!front || S.moon !== moonNow) return;
+        if (!front || !S || S.moon !== moonNow || S.phase === 'gameover') return;
         bump(front.querySelector('.moon'), 'boing');
         if (track) bump(track, 'pulse');
         FX.ring(front.querySelector('.moon'), '#f2b52b');
@@ -733,14 +806,14 @@
     setTimeout(() => t.remove(), 2800);
   }
 
-  function popup(el, text, cls) {
+  function popup(el, text, cls, slow) {
     const r = el.getBoundingClientRect();
     const p = document.createElement('div');
     p.className = 'popup pop-' + cls;
     p.textContent = text;
     p.style.left = r.left + r.width / 2 + 'px';
     p.style.top = r.top + 'px';
-    const dur = (cls === 'slang' ? 1600 : 1000) / settings.speed;
+    const dur = ((cls === 'slang' ? 1600 : 1000) * (slow ? 2 : 1)) / settings.speed;
     p.style.animationDuration = dur + 'ms';
     p.style.setProperty('--rot', (Math.random() * 14 - 7).toFixed(1) + 'deg');
     document.body.appendChild(p);
@@ -773,6 +846,7 @@
     if (e.kind === 'card') return $(`#play-area .card[data-uid="${e.ref}"]`);
     if (e.kind === 'held') return $(`#hand .card[data-uid="${e.ref}"]`);
     if (e.kind === 'joker') return $(`.jokers-tray .joker[data-uid="${e.ref}"]`);
+    if (e.kind === 'fever') return $('#groove');
     return null;
   }
 
@@ -781,11 +855,222 @@
     if (live) live.textContent = text;
   }
 
+  // ---------- Musik und Takt ----------
+  function syncMusic() {
+    if (!L.music) return;
+    const inRun = !!S && S.phase !== 'gameover';
+    const fever = !!S && S.fever > 0;
+    const audible = settings.music && settings.sound;
+    const r = S && S.round;
+    L.music.update({
+      on: inRun && (audible || (fever && FX.active())),
+      audible,
+      progress: r && S.phase === 'round' ? r.score / r.target : 0,
+      fever,
+    });
+  }
+
+  // Auf jeden Schlag: alles wippt kurz, die Tanzfläche schaltet ein Viertel der Fliesen weiter,
+  // im Disco-Fieber wechselt die Spirale ihre Farben
+  let spiralShift = 0;
+  function onBeat(b) {
+    if (!S || FX.calm) return;
+    const root = document.documentElement;
+    root.classList.add('beat');
+    setTimeout(() => root.classList.remove('beat'), 110);
+    const fl = $('.run.fever .floor');
+    if (fl) fl.dataset.b = b % 4;
+    const sp = $('.run.fever .spiral');
+    if (sp && b % 2 === 0) sp.dataset.shift = spiralShift = (spiralShift + 1) % 5;
+  }
+
+  // Die psychedelische Spirale dreht sich schneller, je voller der Groove ist
+  const spin = { angle: 0, boost: 0, last: 0 };
+  function spinLoop(t) {
+    requestAnimationFrame(spinLoop);
+    const dt = spin.last ? Math.min(0.1, (t - spin.last) / 1000) : 0;
+    spin.last = t;
+    const el = S && !FX.calm ? $('.spiral') : null;
+    if (!el) return;
+    const g = (S.groove || 0) / D.GROOVE_MAX;
+    const fever = S.fever > 0;
+    const period = fever ? 3 : 60 - 54 * g; // Sekunden pro Umdrehung
+    spin.angle = (spin.angle + dt * (360 / period) * (1 + spin.boost)) % 360;
+    spin.boost *= Math.pow(0.25, dt);
+    el.style.rotate = spin.angle.toFixed(2) + 'deg';
+    el.style.opacity = (fever ? 0.28 : 0.08 + 0.18 * g).toFixed(3);
+  }
+
+  // ---------- Joker mit Gesichtern ----------
+  const SLANG = ['Groovy!', 'Heiß!', 'Dufte!', 'Volle Kanne!', 'Klasse!', 'Wahnsinn!', 'Echt stark!', 'Abgefahren!', 'Knorke!', 'Spitze!'];
+  const SPECIAL = { werwolf: 'Auuuu!', nachteule: 'Uhuu!', sparschwein: 'Oink!', narr: 'Hihi!' };
+  let eyeRaf = 0;
+  let eyeX = window.innerWidth / 2;
+  let eyeY = window.innerHeight / 2;
+  function updateEyes() {
+    eyeRaf = 0;
+    if (FX.calm) return;
+    $$('.jface').forEach((f) => {
+      const r = f.getBoundingClientRect();
+      if (!r.width) return;
+      const dx = eyeX - (r.left + r.width / 2);
+      const dy = eyeY - (r.top + r.height / 2);
+      const d = Math.hypot(dx, dy) || 1;
+      const k = Math.min(1, d / 120) * 3;
+      f.style.setProperty('--px', ((dx / d) * k).toFixed(2) + 'px');
+      f.style.setProperty('--py', ((dy / d) * k).toFixed(2) + 'px');
+    });
+  }
+  function lookAt(x, y) {
+    eyeX = x;
+    eyeY = y;
+    if (!eyeRaf) eyeRaf = requestAnimationFrame(updateEyes);
+  }
+
+  // Ein Joker jubelt und sagt manchmal etwas
+  function cheer(el) {
+    el.classList.add('cheer');
+    clearTimeout(el.cheerTimer);
+    el.cheerTimer = setTimeout(() => el.classList.remove('cheer'), 900);
+    if (!FX.active() || el.dataset.talking || Math.random() > 0.5) return;
+    const j = S.jokers.find((x) => x.uid === el.dataset.uid);
+    let text = SLANG[Math.floor(Math.random() * SLANG.length)];
+    if (j && SPECIAL[j.id] && (j.id !== 'werwolf' || S.moon === D.FULL_MOON)) text = SPECIAL[j.id];
+    el.dataset.talking = '1';
+    const r = el.getBoundingClientRect();
+    const b = document.createElement('div');
+    b.className = 'jbubble';
+    b.textContent = text;
+    b.setAttribute('aria-hidden', 'true');
+    b.style.left = r.left + r.width / 2 + 'px';
+    b.style.top = r.bottom + 10 + 'px';
+    b.style.setProperty('--rot', (Math.random() * 10 - 5).toFixed(1) + 'deg');
+    document.body.appendChild(b);
+    setTimeout(() => b.classList.add('out'), 1100 / settings.speed);
+    setTimeout(() => { b.remove(); delete el.dataset.talking; }, 1400 / settings.speed);
+  }
+
+  // ---------- Boss-Plakat ----------
+  const TAGLINES = ['Diesen Sommer im Kino', 'Bald in Ihrem Lichtspielhaus', 'Nur für starke Nerven', 'Der Schocker des Jahres', 'Jetzt in Farbe und Breitwand'];
+  function posterHTML(info) {
+    const b = info.boss;
+    const tag = b.final ? 'Das große Finale' : TAGLINES[L.hashSeed(S.bossId + S.ante) % TAGLINES.length];
+    return `<div class="poster" role="dialog" aria-modal="true" aria-labelledby="poster-title" aria-describedby="poster-rule">
+      <div class="poster-sun" aria-hidden="true"></div>
+      <p class="poster-pre">Der Mond präsentiert</p>
+      <span class="poster-sigil">${A.boss(S.bossId)}</span>
+      <h2 class="poster-title" id="poster-title" style="--len:${Math.max(7, ...b.name.split(' ').map((w) => w.length))}">${esc(b.name)}</h2>
+      <p class="poster-tag">${tag}</p>
+      <p class="poster-rule" id="poster-rule">${esc(b.desc)}</p>
+      <p class="poster-credits">Ante ${S.ante} · Ziel ${fmt(info.target)} Punkte · Belohnung $${info.reward}</p>
+      <button type="button" class="btn btn-primary" data-act="poster-go">Zum Kampf</button>
+    </div>`;
+  }
+  // Dunkel, Donner, ein Blitz, dann knallt das Filmplakat herein
+  function bossIntro(info) {
+    return new Promise((resolve) => {
+      const back = document.createElement('div');
+      back.className = 'poster-back';
+      back.dataset.act = 'poster-go';
+      setHTML(back, posterHTML(info));
+      document.body.appendChild(back);
+      sfx('thunder');
+      setTimeout(() => FX.flash('#f4e6c8'), 260);
+      setTimeout(() => { const btn = back.querySelector('.btn'); if (btn) btn.focus({ preventScroll: true }); }, 60);
+      let auto = 0;
+      const finish = () => {
+        if (posterDone !== finish) return;
+        posterDone = null;
+        clearTimeout(auto);
+        back.classList.add('out');
+        setTimeout(() => { back.remove(); resolve(); }, 380);
+      };
+      posterDone = finish;
+      auto = setTimeout(finish, 5200);
+    });
+  }
+
+  // ---------- Mondlandung ----------
+  function moonLanding() {
+    if (!FX.active()) return;
+    setTimeout(() => {
+      const moon = $('.mt-moon.now .moon');
+      if (!moon) return;
+      const mr = moon.getBoundingClientRect();
+      const w = Math.max(40, mr.width * 0.8);
+      const h = (w * 64) / 60;
+      const el = document.createElement('div');
+      el.className = 'lander';
+      el.setAttribute('aria-hidden', 'true');
+      setHTML(el, A.lander());
+      el.style.width = w + 'px';
+      el.style.left = mr.left + mr.width / 2 - w / 2 + 'px';
+      el.style.top = mr.top + mr.height * 0.12 - h * 0.88 + 'px';
+      document.body.appendChild(el);
+      sfx('rocket');
+      const flame = setInterval(() => {
+        const r = el.getBoundingClientRect();
+        FX.burst(r.left + r.width / 2, r.top + r.height * 0.76, { n: 3, speed: 1, spread: 0.6, up: -4, gravity: 0.1, life: 18, size: 7, shapes: ['circle'], colors: ['#f2b52b', '#f08b1f', '#f4e6c8'] });
+      }, 45);
+      setTimeout(() => {
+        clearInterval(flame);
+        const r = el.getBoundingClientRect();
+        sfx('thud');
+        FX.burst(r.left + r.width / 2, r.top + r.height * 0.88, { n: 34, speed: 4, spread: 1.5, up: 0.5, gravity: 0.04, life: 55, size: 8, shapes: ['circle'], colors: ['#d6bf98', '#f4e6c8', '#8a7a66'] });
+        el.classList.add('landed');
+      }, 1800);
+      setTimeout(() => sfx('quindar'), 2200);
+      setTimeout(() => el.classList.add('away'), 3800);
+      setTimeout(() => el.remove(), 4600);
+    }, 900);
+  }
+
+  // ---------- Aufnäher ----------
+  function awardPatches(ev, d) {
+    if (!S || !L.patches) return;
+    const p = profile();
+    const have = new Set(p.patches);
+    const fresh = [...new Set(L.patches.check(S, ev, d || {}))].filter((id) => !have.has(id));
+    if (!fresh.length) return;
+    p.patches = p.patches.concat(fresh);
+    store.set(PROFILE_KEY, p);
+    patchQueue.push(...fresh);
+    if (!patchShowing) showNextPatch();
+  }
+  // Der neue Aufnäher fliegt herein und danach auf den Jacken-Button
+  function showNextPatch() {
+    const id = patchQueue.shift();
+    if (!id) { patchShowing = false; return; }
+    patchShowing = true;
+    const def = L.patches.byId[id];
+    const el = document.createElement('div');
+    el.className = 'patch-pop';
+    el.setAttribute('aria-hidden', 'true');
+    setHTML(el, `${patchHTML(def)}<span class="pp-text"><small>Neuer Aufnäher</small>${esc(def.name)}</span>`);
+    document.body.appendChild(el);
+    sfx('patch');
+    announce(`Neuer Aufnäher: ${def.name}. ${def.hint}`);
+    setTimeout(() => FX.burstAt(el.querySelector('.patch'), { n: 40, speed: 9, shapes: ['star', 'rect'] }), 450);
+    setTimeout(() => {
+      const target = $('[data-act="show-jacket"]');
+      if (target && FX.active()) {
+        const a = el.querySelector('.patch').getBoundingClientRect();
+        const b = target.getBoundingClientRect();
+        el.style.setProperty('--tx', (b.left + b.width / 2 - (a.left + a.width / 2)).toFixed(0) + 'px');
+        el.style.setProperty('--ty', (b.top + b.height / 2 - (a.top + a.height / 2)).toFixed(0) + 'px');
+        el.classList.add('away');
+        setTimeout(() => bump(target, 'boing'), 520);
+      } else el.classList.add('out');
+      setTimeout(() => { el.remove(); showNextPatch(); }, 650);
+    }, 2700);
+  }
+
   // ---------- Spielzüge ----------
   // Farben der Partikel je Wertungsart
   const FX_COLORS = {
     chips: ['#187172', '#4fb3b3', '#f4e6c8'], mult: ['#f0782a', '#e05a1a', '#f2b52b'], xmult: ['#f2b52b', '#f08b1f', '#e05a1a', '#a83a18'],
     moon: ['#f2b52b', '#f4e6c8'], money: ['#f2b52b', '#a2b13a'], info: ['#f4e6c8', '#f2b52b'], debuff: ['#6b4a33', '#3a2215'],
+    fever: ['#f2b52b', '#f08b1f', '#e05a1a', '#187172', '#a2b13a', '#f4e6c8'],
   };
 
   async function doPlay() {
@@ -815,19 +1100,42 @@
     $$('#play-area .card.scoring').forEach((el) => el.classList.add('up'));
     await sleep(250);
 
+    // Zeitlupe: ab dem Ereignis vor dem Siegtreffer läuft alles langsamer
+    const before = S.round.score;
+    const target = S.round.target;
+    const remaining = target - before;
+    let winIdx = -1;
+    if (before + res.total >= target) winIdx = res.events.findIndex((e) => before + Math.floor(e.chips * e.mult) >= target);
+    let release = null;
+
     let step = 0;
     const money = () => $('#money-value');
-    for (const e of res.events) {
+    const ch = $('#hp-chips');
+    const mu = $('#hp-mult');
+    for (let i = 0; i < res.events.length; i++) {
+      const e = res.events[i];
       const el = eventEl(e);
       const colors = FX_COLORS[e.cls] || FX_COLORS.info;
+      const slow = FX.active() && winIdx >= 0 && (i === winIdx - 1 || i === winIdx);
+      if (slow) {
+        if (!release) release = FX.slowmo(el || $('#play-area'), $('.board'));
+        sfx('heart');
+      }
       if (el) {
-        bump(el, e.kind === 'joker' ? 'jspin' : 'hit');
-        popup(el, e.text, e.cls);
+        bump(el, e.kind === 'joker' ? 'jspin' : e.kind === 'fever' ? 'boing' : 'hit');
+        if (e.kind === 'joker') cheer(el);
+        popup(el, e.text, e.cls, slow);
         if (e.cls === 'xmult') {
           FX.burstAt(el, { n: 60, speed: 13, shapes: ['star', 'rect'], colors, size: 13 });
           FX.ring(el, '#f2b52b');
           FX.shake(2);
           FX.flash('#f0782a');
+          FX.glitch();
+        } else if (e.cls === 'fever') {
+          FX.burstAt(el, { n: 90, speed: 14, shapes: ['star', 'rect', 'circle'], colors, size: 12 });
+          FX.ring(el, '#f08b1f');
+          FX.shake(2);
+          FX.glitch();
         } else if (e.cls === 'moon') {
           FX.burstAt(el, { n: 16, speed: 7, gravity: 0.12, shapes: ['star', 'text'], text: '☾', size: 14, colors });
         } else if (e.cls === 'money') {
@@ -837,28 +1145,51 @@
           FX.burstAt(el, { n: e.cls === 'info' ? 10 : 16, speed: 7, colors });
         }
       }
-      if (e.jref) { const je = $(`.jokers-tray .joker[data-uid="${e.jref}"]`); if (je) { bump(je, 'jspin'); FX.burstAt(je, { n: 10, speed: 5, colors }); } }
-      const ch = $('#hp-chips');
-      const mu = $('#hp-mult');
+      if (e.jref) {
+        const je = $(`.jokers-tray .joker[data-uid="${e.jref}"]`);
+        if (je) { bump(je, 'jspin'); cheer(je); FX.burstAt(je, { n: 10, speed: 5, colors }); }
+      }
       if (ch.textContent !== fmt(e.chips)) { ch.textContent = fmt(e.chips); bump(ch, 'mega'); }
-      if (mu.textContent !== L.fmtNum(e.mult)) { mu.textContent = L.fmtNum(e.mult); bump(mu, e.cls === 'xmult' ? 'ultra' : 'mega'); }
+      if (mu.textContent !== L.fmtNum(e.mult)) { mu.textContent = L.fmtNum(e.mult); bump(mu, e.cls === 'xmult' || e.cls === 'fever' ? 'ultra' : 'mega'); }
+      // Die Zähler brennen, sobald die Hand das Ziel schafft oder die Mult riesig wird
+      const hot = e.chips * e.mult >= remaining;
+      setBurn(ch, hot);
+      setBurn(mu, hot || e.mult >= 40);
+      spin.boost = Math.min(5, spin.boost + 0.5);
       sfx(e.cls, step++);
-      await sleep(e.cls === 'xmult' ? 520 : e.cls === 'moon' ? 360 : 280);
+      if (i === winIdx && FX.active()) {
+        // Der Siegtreffer explodiert
+        const at = el || $('#play-area');
+        sfx('boom');
+        FX.shake(3);
+        FX.flash('#f4e6c8');
+        FX.glitch();
+        FX.burstAt(at, { n: 150, speed: 18, size: 14, shapes: ['star', 'rect', 'circle'] });
+        FX.ring(at, '#f4e6c8');
+        setTimeout(() => FX.ring(at, '#f08b1f'), 120);
+        popup(at, 'Treffer!', 'slang', true);
+      }
+      await sleep((e.cls === 'xmult' ? 520 : e.cls === 'fever' ? 620 : e.cls === 'moon' ? 360 : 280) * (slow ? 2.6 : 1));
+      if (i === winIdx && release) { release(); release = null; }
     }
+    if (release) release();
     await sleep(200);
 
     // Die Gesamtpunktzahl wird riesig und fliegt ins Anzeigefenster
     const hp = $('#hand-panel');
-    const before = S.round.score;
-    const ratio = res.total / S.round.target;
+    const ratio = res.total / target;
     setHTML($('#hp-name'), `<span class="total">${fmt(res.total)}</span> <small>Punkte</small>`);
     hp.classList.add('scored');
-    if (before + res.total >= S.round.target) hp.classList.add('enough');
+    if (before + res.total >= target) hp.classList.add('enough');
     announce(`${D.HANDS[res.type].name}: ${fmt(res.total)} Punkte`);
     sfx('total');
     FX.shake(ratio >= 1 ? 3 : ratio >= 0.4 ? 2 : 1);
+    if (ratio >= 1) FX.glitch();
     FX.burst(window.innerWidth / 2, window.innerHeight * 0.45, { n: Math.min(120, 30 + Math.round(ratio * 60)), speed: 14, gravity: 0.2 });
     await FX.bigText(fmt(res.total), { to: $('#round-score'), hold: 650 / settings.speed, cls: ratio >= 1 ? 'huge' : '' });
+    setBurn(ch, false);
+    setBurn(mu, false);
+    FX.flames();
     const word = ratio >= 3 ? 'Irre!' : ratio >= 1 ? 'Dufte!' : ratio >= 0.6 ? 'Spitze!' : ratio >= 0.3 ? 'Klasse!' : null;
     const area = $('#play-area');
     if (word && area) {
@@ -869,13 +1200,28 @@
     }
     const score = $('#round-score');
     bump(score, 'flicker');
-    await countUp(score, before, before + res.total, 600);
+    // Das Anzeigefenster füllt sich wie eine Lavalampe und läuft beim Ziel über
+    const fill = Math.min(100, ((before + res.total) / target) * 100);
+    const lava = $('.lava');
+    if (lava) lava.style.setProperty('--fill', fill + '%');
     const bar = $('.led-bar > span');
-    if (bar) bar.style.width = Math.min(100, ((before + res.total) / S.round.target) * 100) + '%';
+    if (bar) bar.style.width = fill + '%';
+    await countUp(score, before, before + res.total, 600);
+    if (before + res.total >= target) { const ls = $('#led-score'); if (ls) ls.classList.add('overflow'); }
     await sleep(450);
 
+    const g0 = S.groove || 0;
+    const wasBoss = !!S.round.bossId;
     const out = G.resolvePlay(S, res);
     playView = null;
+    awardPatches('hand', { res, target, won: !!out.won, feverStart: out.feverStart, boss: wasBoss });
+    refreshGroove();
+    const gEl = $('#groove');
+    if (out.feverStart) await celebrateFever();
+    else if (gEl && !res.feverUsed) {
+      if (S.groove > g0) { popup(gEl, `+${S.groove - g0} Groove`, 'groove'); sfx('pop', S.groove * 3); bump(gEl, 'boing'); }
+      else if (g0 > 0) popup(gEl, 'Groove weg', 'debuff');
+    }
     if (out.won) {
       // Rundensieg: Disco!
       sfx('fanfare');
@@ -886,7 +1232,7 @@
       busy = false;
       await FX.wipe(() => UI.render());
     } else if (out.lost) {
-      // Alles fällt vom Tisch
+      // Alles fällt vom Tisch, dann schaltet sich der Fernseher ab
       sfx('lose');
       recordEnd(false);
       if (FX.active()) {
@@ -900,6 +1246,11 @@
         });
         await sleep(1000);
         FX.shake(3);
+        if (settings.crt && run) {
+          sfx('tvoff');
+          run.classList.add('tv-off');
+          await sleep(750);
+        }
       }
       busy = false;
       UI.render();
@@ -909,6 +1260,25 @@
     }
     const focusEl = $('[data-act="cashout"]') || $('.end-box .btn') || $('#hand .card');
     if (focusEl && document.activeElement === document.body) focusEl.focus({ preventScroll: true });
+  }
+
+  function setBurn(el, on) {
+    if (!el || el.classList.contains('burning') === on) return;
+    el.classList.toggle('burning', on);
+    FX.flames(el, on);
+  }
+
+  async function celebrateFever() {
+    announce(`Disco-Fieber! Die nächsten ${D.FEVER_HANDS} Hände bekommen ×${D.FEVER_MULT} Mult.`);
+    sfx('fanfare');
+    sfx('fever');
+    const g = $('#groove');
+    if (g) { bump(g, 'ultra'); FX.burstAt(g, { n: 80, speed: 14, shapes: ['star', 'rect'] }); }
+    FX.flash('#f2b52b');
+    FX.disco(3200 / Math.min(2, settings.speed));
+    FX.rain(120);
+    FX.glitch();
+    await FX.bigText('Disco-Fieber!', { cls: 'fever', hold: 1000 / settings.speed });
   }
 
   async function doDiscard() {
@@ -1006,7 +1376,17 @@
       const first = $('#hand .card');
       if (first) first.focus();
     },
-    'select-blind'() { transition(() => G.selectBlind(S)); },
+    async 'select-blind'() {
+      if (busy) return;
+      const info = G.blindInfo(S, S.blindIndex);
+      if (info.isBoss && FX.active()) {
+        busy = true;
+        await bossIntro(info);
+        busy = false;
+      }
+      transition(() => G.selectBlind(S));
+    },
+    'poster-go'() { if (posterDone) posterDone(); },
     async 'skip-blind'(el) {
       if (busy) return;
       busy = true;
@@ -1069,12 +1449,14 @@
     },
     'use-cons'(el) {
       if (busy) return;
+      const item = S.consumables.find((c) => c.uid === el.dataset.uid);
       const r = G.useConsumable(S, el.dataset.uid);
       if (r.error) { toast(r.error, 'bad'); sfx('error'); return; }
       selCons = null;
       sfx('use');
       toast(r.msg);
       UI.render();
+      if (item && item.kind === 'mond') { moonLanding(); awardPatches('moonstone'); }
     },
     'sell-cons'(el) {
       if (busy) return;
@@ -1151,10 +1533,13 @@
     'show-hands'() { modalReturn = '[data-act="show-hands"]'; modal = 'hands'; UI.render(); },
     'show-deck'() { modalReturn = '[data-act="show-deck"]'; modal = 'deck'; UI.render(); },
     'show-settings'() { modalReturn = '[data-act="show-settings"]'; modal = 'settings'; UI.render(); },
+    'show-jacket'() { modalReturn = '[data-act="show-jacket"]'; modal = 'jacket'; UI.render(); },
     'close-modal'() { modal = null; pendingConfirm = null; UI.render(); },
     speed(el) { settings.speed = +el.dataset.v; store.set(SETTINGS_KEY, settings); UI.render(); },
     fx(el) { settings.fx = el.dataset.v; store.set(SETTINGS_KEY, settings); applyFx(); UI.render(); },
     'toggle-sound'() { settings.sound = !settings.sound; L.audio.enabled = settings.sound; store.set(SETTINGS_KEY, settings); UI.render(); },
+    'toggle-music'() { settings.music = !settings.music; store.set(SETTINGS_KEY, settings); UI.render(); },
+    'toggle-crt'() { settings.crt = !settings.crt; store.set(SETTINGS_KEY, settings); applyCrt(); UI.render(); },
   };
 
   function onClick(ev) {
@@ -1174,6 +1559,7 @@
 
   function onKey(ev) {
     if (ev.target && ev.target.tagName === 'INPUT') return;
+    if (ev.key === 'Escape' && posterDone) { posterDone(); return; }
     if (ev.key === 'Escape') {
       if (modal) { modal = null; pendingConfirm = null; UI.render(); } else if (selJoker || selCons) { selJoker = selCons = null; UI.render(); }
       return;
@@ -1235,7 +1621,9 @@
   // Joker & Co. kippen leicht in Richtung des Zeigers
   let tiltEl = null;
   function onPointerMove(ev) {
-    if (ev.pointerType !== 'mouse' || reducedMotion()) return;
+    if (reducedMotion()) return;
+    lookAt(ev.clientX, ev.clientY);
+    if (ev.pointerType !== 'mouse') return;
     const el = ev.target.closest && ev.target.closest('.joker, .cons, .pack');
     if (tiltEl && tiltEl !== el) { tiltEl.style.removeProperty('--tx'); tiltEl.style.removeProperty('--ty'); }
     tiltEl = el;
@@ -1254,10 +1642,24 @@
     document.documentElement.classList.toggle('fx-calm', FX.calm);
   }
 
+  // Röhrenfernseher: Zeilen, Farbsäume, Bildstörungen
+  function applyCrt() {
+    FX.crt = settings.crt;
+    document.documentElement.classList.toggle('crt-on', settings.crt);
+  }
+
   UI.init = function (data) {
     settings = Object.assign(settings, store.get(SETTINGS_KEY) || {});
     applyFx();
+    applyCrt();
     FX.lava();
+    const crt = document.createElement('div');
+    crt.className = 'crt';
+    crt.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(crt);
+    L.music.onBeat(onBeat);
+    requestAnimationFrame(spinLoop);
+    document.addEventListener('visibilitychange', syncMusic);
     if (data && data.state && data.state.version === 1) S = data.state;
     L.audio.enabled = settings.sound;
     document.addEventListener('click', onClick);

@@ -180,6 +180,42 @@
     return svg(inner);
   };
 
+  // Psychedelische Spirale für den Hintergrund des Spielfelds: verdrehte Arme in den Streifenfarben
+  A.spiral = function () {
+    const n = 10;
+    const R = 100;
+    const twist = 4.6;
+    const edge = (a0, rev) => {
+      const pts = [];
+      for (let i = 0; i <= 32; i++) {
+        const r = (i / 32) * R;
+        const th = a0 + (r / R) * twist;
+        pts.push((r * Math.cos(th)).toFixed(1) + ' ' + (r * Math.sin(th)).toFixed(1));
+      }
+      return rev ? pts.reverse() : pts;
+    };
+    let arms = '';
+    for (let k = 0; k < n; k += 2) {
+      const a0 = (k / n) * Math.PI * 2;
+      const a1 = ((k + 1) / n) * Math.PI * 2;
+      arms += `<path class="s${k / 2 + 1}" d="M${edge(a0).concat(edge(a1, true)).join('L')}Z"/>`;
+    }
+    return `<svg class="spiral" viewBox="-100 -100 200 200" aria-hidden="true">${arms}</svg>`;
+  };
+
+  // Mondfähre mit Fahne für die Mondlandung (60×60)
+  A.lander = () => `<svg class="lander-art" viewBox="0 0 60 64" aria-hidden="true">
+    <path class="lm-leg" d="M19 37L7 55M41 37L53 55M23 41L13 52M37 41L47 52"/>
+    <ellipse class="lm-pad" cx="7" cy="56" rx="4" ry="1.6"/><ellipse class="lm-pad" cx="53" cy="56" rx="4" ry="1.6"/>
+    <path class="lm-nozzle" d="M26 42H34L36 48H24Z"/>
+    <path class="lm-gold" d="M15 30H45L47 36L45 42H15L13 36Z"/>
+    <path class="lm-foil" d="M15 34H45M21 30V42M39 30V42"/>
+    <path class="lm-cab" d="M19 30L17 21L23 13H37L43 21L41 30Z"/>
+    <path class="lm-win" d="M24 18L28 18L26 23ZM32 18L36 18L34 23Z"/>
+    <path class="lm-ant" d="M37 13L41 6M38.5 5.5A3 3 0 0 0 43.5 6.5"/>
+    <g class="lm-flag"><path class="lm-pole" d="M50 55V36"/><path class="lm-cloth" d="M50 36H60V43H50Z"/><path class="lm-stripe" d="M50 38.3H60M50 40.6H60"/></g>
+  </svg>`;
+
   // Tarot-Nummern der großen Arkana (echte Reihenfolge)
   A.ARKANA_NO = {
     magier: 'I', hohepriesterin: 'II', herrscherin: 'III', hierophant: 'V', liebenden: 'VI', wagen: 'VII',

@@ -1,5 +1,5 @@
 // Übertriebene Effekte: Partikel (Konfetti, Sterne, Münzen), Bildschirmwackeln, Blitz,
-// Riesentext, Regenbogen-Wischblende, Disco-Kugel, Feuerwerk, Lavalampe.
+// Riesentext, Regenbogen-Wischblende, Disco-Kugel, Feuerwerk, Lavalampe, Flammen, Zeitlupe, Bildstörung.
 // Alles schaltet sich ab, wenn "Effekte: ruhig" gewählt ist oder das System weniger Bewegung wünscht.
 (function (L) {
   'use strict';
@@ -102,6 +102,7 @@
         p.y += p.vy;
       }
       p.rot += p.vr;
+      if (p.shrink) p.size *= p.shrink;
       draw(p);
       keep.push(p);
     }
@@ -189,9 +190,13 @@
     el.classList.add('shake');
   };
 
-  // Farbblitz über den ganzen Bildschirm
+  // Farbblitz über den ganzen Bildschirm, höchstens drei pro Sekunde (Schutz bei Lichtempfindlichkeit)
+  let lastFlash = 0;
   FX.flash = function (color) {
     if (!FX.active()) return;
+    const t = performance.now();
+    if (t - lastFlash < 350) return;
+    lastFlash = t;
     const f = make('div', 'fx-flash');
     f.style.background = color || '#f2b52b';
     document.body.appendChild(f);
@@ -254,6 +259,60 @@
     document.body.appendChild(d);
     setTimeout(() => d.classList.add('out'), (ms || 2200) - 500);
     setTimeout(() => d.remove(), ms || 2200);
+  };
+
+  // Brennende Zähler: Flammen steigen vom oberen Rand der Elemente auf
+  const burning = new Set();
+  let flameTimer = 0;
+  function emitFlames() {
+    burning.forEach((el) => {
+      if (!document.body.contains(el)) { burning.delete(el); return; }
+      const r = el.getBoundingClientRect();
+      add(many(3, () => ({
+        x: rnd(r.left + 6, r.right - 6), y: r.top + rnd(0, 6), vx: rnd(-0.4, 0.4), vy: rnd(-3.2, -1.6), g: -0.04, drag: 0.98,
+        life: Math.round(rnd(22, 38)), age: 0, size: rnd(9, 15), shrink: 0.94, rot: 0, vr: 0, seed: 0,
+        color: pick(['#f2b52b', '#f08b1f', '#e05a1a', '#f4e6c8']), shape: 'circle',
+      })));
+    });
+    if (!burning.size) { clearInterval(flameTimer); flameTimer = 0; }
+  }
+  // FX.flames(el, true) zündet an, FX.flames(el, false) löscht, FX.flames() löscht alles
+  FX.flames = function (el, on) {
+    if (!el) burning.clear();
+    else if (on && FX.active()) burning.add(el);
+    else burning.delete(el);
+    if (burning.size && !flameTimer) flameTimer = setInterval(emitFlames, 50);
+  };
+
+  // Zeitlupe: Vignette und Kamerafahrt auf ein Element; gibt eine Funktion zum Beenden zurück
+  FX.slowmo = function (el, zoomEl) {
+    if (!FX.active()) return () => {};
+    const v = make('div', 'fx-vignette');
+    v.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(v);
+    if (zoomEl && el) {
+      const zr = zoomEl.getBoundingClientRect();
+      const c = center(el);
+      zoomEl.style.transformOrigin = `${(c.x - zr.left).toFixed(0)}px ${(c.y - zr.top).toFixed(0)}px`;
+      zoomEl.classList.add('fx-zoom');
+    }
+    return () => {
+      v.classList.add('out');
+      setTimeout(() => v.remove(), 600);
+      if (zoomEl) zoomEl.classList.remove('fx-zoom');
+    };
+  };
+
+  // Bildstörung des Röhrenfernsehers bei großen Treffern
+  FX.crt = false;
+  FX.glitch = function () {
+    if (!FX.active() || !FX.crt) return;
+    const el = document.getElementById('app');
+    if (!el) return;
+    el.classList.remove('glitch');
+    void el.offsetWidth;
+    el.classList.add('glitch');
+    setTimeout(() => el.classList.remove('glitch'), 380);
   };
 
   // Lavalampen-Blasen im Hintergrund

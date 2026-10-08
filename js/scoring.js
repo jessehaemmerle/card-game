@@ -224,7 +224,14 @@
       if (j.edition === 'poly') apply({ xmult: 1.5 }, src);
     });
 
-    // 5) Glas zerbricht
+    // 5) Disco-Fieber verdoppelt die Mult
+    if (state.fever > 0) {
+      ctx.feverUsed = true;
+      ctx.mult *= D.FEVER_MULT;
+      push({ kind: 'fever', ref: null }, `Disco-Fieber ×${D.FEVER_MULT}`, 'fever');
+    }
+
+    // 6) Glas zerbricht
     for (const c of ev.scoring) {
       if (c.enh === 'glass' && !ctx.isDebuffed(c) && L.rand(state) < 0.25) {
         ctx.broken.push(c);

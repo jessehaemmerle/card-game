@@ -40,6 +40,13 @@
     { name: 'Vollmond',   suit: '*', frac: 1 },
   ];
   D.FULL_MOON = 4;
+
+  // Disco-Fieber: starke Hände hintereinander füllen das Groove-O-Meter
+  D.GROOVE_MAX = 6;
+  D.FEVER_HANDS = 2;
+  D.FEVER_MULT = 2;
+  // Punkte fürs Groove-O-Meter je nach Anteil am Punktziel der Blinde
+  D.groovePoints = (ratio) => (ratio >= 0.6 ? 3 : ratio >= 0.35 ? 2 : ratio >= 0.15 ? 1 : 0);
   D.NEW_MOON = 0;
 
   D.ENH = {

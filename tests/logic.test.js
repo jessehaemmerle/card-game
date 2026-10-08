@@ -1,7 +1,7 @@
 // Logiktests ohne Browser:  node tests/logic.test.js
 'use strict';
 const path = require('path');
-['util', 'data', 'scoring', 'jokers', 'consumables', 'game'].forEach((f) => require(path.join(__dirname, '..', 'js', f + '.js')));
+['util', 'data', 'scoring', 'jokers', 'consumables', 'game', 'patches'].forEach((f) => require(path.join(__dirname, '..', 'js', f + '.js')));
 const L = globalThis.LUN;
 const G = L.game;
 const assert = require('assert');
@@ -85,6 +85,36 @@ test('Mond zieht nach jeder Hand weiter', () => {
   const res = G.beginPlay(s);
   G.resolvePlay(s, res);
   assert.strictEqual(s.moon, (m + 1) % 5);
+});
+
+test('Groove-O-Meter füllt sich und Disco-Fieber verdoppelt die Mult', () => {
+  const s = freshRound();
+  s.moon = 2;
+  s.groove = L.data.GROOVE_MAX - 1;
+  const fake = { total: s.round.target, feverUsed: false };
+  assert.strictEqual(G.updateGroove(s, fake), true);
+  assert.strictEqual(s.fever, L.data.FEVER_HANDS);
+  const res = L.scoreHand(s, [card(10, 'H'), card(10, 'S')], []);
+  assert.strictEqual(res.total, 30 * 2 * L.data.FEVER_MULT);
+  assert.ok(res.feverUsed);
+  G.updateGroove(s, res);
+  assert.strictEqual(s.fever, L.data.FEVER_HANDS - 1);
+});
+test('Schwache Hand bricht die Groove-Serie', () => {
+  const s = freshRound();
+  s.groove = 4;
+  G.updateGroove(s, { total: 0, feverUsed: false });
+  assert.strictEqual(s.groove, 0);
+});
+
+test('Aufnäher: Flush bei Vollmond bringt passende Abzeichen', () => {
+  const s = freshRound();
+  s.moon = L.data.FULL_MOON;
+  const res = L.scoreHand(s, [card(2, 'H'), card(5, 'H'), card(7, 'H'), card(9, 'H'), card(12, 'H')], []);
+  const got = L.patches.check(s, 'hand', { res, target: s.round.target, won: false, feverStart: false, boss: false });
+  ['ersteHand', 'vollmond', 'flush'].forEach((id) => assert.ok(got.includes(id), id));
+  assert.ok(!got.includes('strasse'));
+  assert.ok(L.patches.LIST.every((p) => L.patches.motif(p)), 'jeder Aufnäher hat ein Motiv');
 });
 
 // ---------- Bot-Simulation: findet Laufzeitfehler & grobe Balance ----------
